@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Amazon Expedition 3D — &copy; Hazem Soussi</title>
+<style>
+  html,body{margin:0;padding:0;overflow:hidden;background:#000;font-family:'Segoe UI',Arial,sans-serif;height:100%}
+  #c{display:block}
+  .hud{position:fixed;color:#fff;text-shadow:0 1px 3px #000;user-select:none;z-index:5}
+  #score{top:14px;left:16px;font-size:22px;font-weight:bold}
+  #gems{top:44px;left:16px;font-size:16px}
+  #energyWrap{top:14px;right:200px;width:150px;height:14px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.5);border-radius:7px;overflow:hidden}
+  #energyBar{height:100%;width:100%;background:linear-gradient(90deg,#e74c3c,#f1c40f,#2ecc71);transition:width .2s}
+  #energyLabel{top:32px;right:200px;font-size:11px;opacity:.85}
+  #hint{bottom:70px;left:50%;transform:translateX(-50%);font-size:17px;background:rgba(0,0,0,.5);padding:8px 18px;border-radius:20px;display:none}
+  #crosshair{top:50%;left:50%;transform:translate(-50%,-50%);font-size:20px;opacity:.8}
+  #minimap{position:fixed;top:14px;right:14px;border:2px solid rgba(255,255,255,.6);border-radius:8px;z-index:5}
+  #logo{position:fixed;bottom:14px;left:16px;z-index:5;display:flex;align-items:center;gap:10px;color:#fff;text-shadow:0 1px 3px #000;user-select:none;opacity:.9}
+  #logo svg{filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+  #logo .t{font-size:15px;font-weight:bold;letter-spacing:1px}
+  #logo .c{font-size:11px;opacity:.8}
+  .overlay{position:fixed;inset:0;background:rgba(6,25,12,.88);color:#d8f3d8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;text-align:center}
+  .overlay h1{font-size:46px;margin:0 0 8px;color:#7dffa0;text-shadow:0 0 18px #0a4}
+  .overlay p{max-width:560px;line-height:1.5;font-size:16px;margin:6px 0}
+  .overlay .btn{margin-top:22px;padding:13px 42px;font-size:20px;background:#2ecc71;border:none;border-radius:30px;color:#08290f;font-weight:bold;cursor:pointer}
+  .overlay .btn:hover{background:#58e58b}
+  #winOverlay{display:none;background:rgba(30,20,0,.85)}
+  #pauseOverlay{display:none}
+  .keys{margin-top:14px;font-size:14px;opacity:.85;line-height:1.7}
+  kbd{background:#123d1f;padding:2px 8px;border-radius:5px;border:1px solid #3a7}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="hud" id="score">Score: 0</div>
+<div class="hud" id="gems">Gems: 0 / 10</div>
+<div class="hud" id="energyWrap"><div id="energyBar"></div></div>
+<div class="hud" id="energyLabel">ENERGY</div>
+<div class="hud" id="crosshair">+</div>
+<div class="hud" id="hint"></div>
+<div id="logo">
+  <svg width="40" height="40" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-label="Amazon Expedition 3D logo">
+    <defs>
+      <linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#7dffa0"/>
+        <stop offset="1" stop-color="#1a6b3a"/>
+      </linearGradient>
+    </defs>
+    <circle cx="24" cy="24" r="22" fill="#123d1f" stroke="#2ecc71" stroke-width="2"/>
+    <path d="M24 6 L38 40 H33 L24 18 L15 40 H10 Z" fill="url(#lg)"/>
+    <path d="M18.5 30 H29.5" stroke="#0a2f14" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M16 35 H32" stroke="#0a2f14" stroke-width="2.4" stroke-linecap="round"/>
+  </svg>
+  <div>
+    <div class="t">AMAZON EXPEDITION 3D</div>
+    <div class="c">&copy; 2026 Hazem Soussi</div>
+  </div>
+</div>
+<canvas id="minimap" width="170" height="170"></canvas>
+
+<div class="overlay" id="startOverlay">
+  <h1>AMAZON EXPEDITION 3D</h1>
+  <p style="opacity:.8;font-size:13px;margin-top:-4px">&copy; 2026 Hazem Soussi &mdash; all rights reserved</p>
+  <p>Deep in the rainforest, the lost Temple of the Jaguar hides a <b>Golden Idol</b>.
+     Collect the 10 glowing gems scattered across the jungle, meet the wildlife,
+     and cross the great river... the jungle is alive.</p>
+  <button class="btn" id="startBtn">ENTER THE JUNGLE</button>
+  <div class="keys">
+    <kbd>W A S D</kbd> move &nbsp; <kbd>Mouse</kbd> look &nbsp; <kbd>Shift</kbd> sprint &nbsp;
+    <kbd>Space</kbd> jump &nbsp; <kbd>E</kbd> pick up &nbsp; <kbd>Esc</kbd> pause
+  </div>
+</div>
+
+<div class="overlay" id="pauseOverlay">
+  <h1>PAUSED</h1>
+  <button class="btn" id="resumeBtn">RESUME</button>
+</div>
+
+<div class="overlay" id="winOverlay">
+  <h1>THE JAGUAR GOD AWAKENS</h1>
+  <p id="winText"></p>
+  <button class="btn" id="freeBtn">KEEP EXPLORING</button>
+</div>
+
+<script src="three.min.js"></script>
+<script>
+(function(){
+"use strict";
+/*
+ * Amazon Expedition 3D — a first-person jungle adventure.
+ * Copyright (c) 2026 Hazem Soussi. All rights reserved.
+ */
+
+// ------------------- setup -------------------
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9ed7f5);
+scene.fog = new THREE.FogExp2(0xa8dcc8, 0.0075);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 600);
+camera.rotation.order = 'YXZ';
+
+const hemi = new THREE.HemisphereLight(0xcfefff, 0x2d4a1e, 0.85);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2cc, 1.1);
+sun.position.set(80, 120, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -160; sun.shadow.camera.right = 160;
+sun.shadow.camera.top = 160; sun.shadow.camera.bottom = -160;
+sun.shadow.camera.far = 400;
+scene.add(sun);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ------------------- terrain -------------------
+const RIVER_Z1 = 10, RIVER_Z2 = 28;
+const WORLD = 210;
+
+function terrainH(x, z){
+  let h = 3*Math.sin(x*0.02)*Math.cos(z*0.02) + 1.6*Math.sin(x*0.06+2)*Math.sin(z*0.05)
+        + 0.7*Math.sin(x*0.13)*Math.cos(z*0.11);
+  if (z > RIVER_Z1-4 && z < RIVER_Z2+4){
+    if (z > RIVER_Z1 && z < RIVER_Z2){
+      const d = Math.min(1, Math.min(z-RIVER_Z1, RIVER_Z2-z)/6 + 0.15);
+      h = -2.6*d + h*0.15;
+    } else {
+      const t = Math.min(z-(RIVER_Z1-4), (RIVER_Z2+4)-z)/4;
+      h = h*t - 0.4*t;
+    }
+  }
+  const dr = Math.hypot(x, z+120);
+  if (dr < 26) h = h*(dr/26) + 0.5*(1-dr/26);
+  return h;
+}
+
+const gGeo = new THREE.PlaneGeometry(WORLD*2, WORLD*2, 110, 110);
+gGeo.rotateX(-Math.PI/2);
+{
+  const pos = gGeo.attributes.position;
+  for (let i=0;i<pos.count;i++) pos.setY(i, terrainH(pos.getX(i), pos.getZ(i)));
+  gGeo.computeVertexNormals();
+}
+const ground = new THREE.Mesh(gGeo, new THREE.MeshLambertMaterial({color:0x3f7a2a}));
+ground.receiveShadow = true;
+scene.add(ground);
+
+const water = new THREE.Mesh(
+  new THREE.PlaneGeometry(WORLD*2, RIVER_Z2-RIVER_Z1),
+  new THREE.MeshPhongMaterial({color:0x1f7fae, transparent:true, opacity:0.72, shininess:90})
+);
+water.rotation.x = -Math.PI/2;
+water.position.set(0, -0.55, (RIVER_Z1+RIVER_Z2)/2);
+scene.add(water);
+
+// ------------------- vegetation & rocks -------------------
+const colliders = [];
+const minimapTrees = [];
+const trunkMat = new THREE.MeshLambertMaterial({color:0x5a3d22});
+const leafMats = [0x1e5c1e, 0x2c7a24, 0x1a6b3a, 0x35771e].map(c => new THREE.MeshLambertMaterial({color:c}));
+const rockMat = new THREE.MeshLambertMaterial({color:0x8a8a8a});
+
+function inRiver(z){ return z > RIVER_Z1-3 && z < RIVER_Z2+3; }
+function nearRuins(x,z){ return Math.hypot(x, z+120) < 30; }
+function nearStart(x,z){ return Math.hypot(x, z-180) < 14; }
+
+function placeTree(x,z){
+  const s = 0.8 + Math.random()*1.6;
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4*s, 0.6*s, 9*s, 7), trunkMat);
+  trunk.position.y = 4.5*s;
+  trunk.castShadow = true;
+  g.add(trunk);
+  const n = 2 + (Math.random()*2|0);
+  for (let i=0;i<n;i++){
+    const lm = leafMats[Math.random()*leafMats.length|0];
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry((3.2-i*0.7)*s, 7, 6), lm);
+    leaf.position.set((Math.random()-0.5)*2.2*s, (9+i*2.1)*s, (Math.random()-0.5)*2.2*s);
+    leaf.scale.y = 0.72;
+    leaf.castShadow = true;
+    g.add(leaf);
+  }
+  g.position.set(x, terrainH(x,z), z);
+  g.rotation.y = Math.random()*Math.PI*2;
+  scene.add(g);
+  colliders.push({x, z, r:0.8*s});
+  minimapTrees.push([x,z]);
+}
+
+function placeRock(x,z,s){
+  const r = new THREE.Mesh(new THREE.DodecahedronGeometry(s, 0), rockMat);
+  r.position.set(x, terrainH(x,z)+0.2*s, z);
+  r.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
+  r.castShadow = true;
+  scene.add(r);
+  if (s > 1.4) colliders.push({x, z, r:0.9*s});
+}
+
+function placeGrass(x,z){
+  const g = new THREE.Mesh(new THREE.ConeGeometry(0.5+Math.random()*0.5, 1+Math.random(), 4),
+    new THREE.MeshLambertMaterial({color:0x4d9e2e}));
+  g.position.set(x, terrainH(x,z)+0.4, z);
+  g.rotation.z = (Math.random()-0.5)*0.4;
+  scene.add(g);
+}
+
+let placed = 0;
+while (placed < 240){
+  const x = (Math.random()*2-1)*(WORLD-8);
+  const z = (Math.random()*2-1)*(WORLD-8);
+  if (inRiver(z) || nearRuins(x,z) || nearStart(x,z)) continue;
+  placeTree(x,z);
+  placed++;
+}
+for (let i=0;i<70;i++){
+  const x=(Math.random()*2-1)*(WORLD-6), z=(Math.random()*2-1)*(WORLD-6);
+  if (inRiver(z)) continue;
+  placeRock(x,z, 0.6+Math.random()*1.8);
+}
+for (let i=0;i<420;i++){
+  const x=(Math.random()*2-1)*(WORLD-4), z=(Math.random()*2-1)*(WORLD-4);
+  if (inRiver(z)) continue;
+  placeGrass(x,z);
+}
+
+const clouds = [];
+for (let i=0;i<10;i++){
+  const c = new THREE.Mesh(new THREE.SphereGeometry(8+Math.random()*10, 7, 5),
+    new THREE.MeshLambertMaterial({color:0xffffff, transparent:true, opacity:0.85}));
+  c.position.set((Math.random()*2-1)*220, 55+Math.random()*25, (Math.random()*2-1)*220);
+  c.scale.y = 0.35;
+  scene.add(c);
+  clouds.push(c);
+}
+
+// ------------------- ruins & idol -------------------
+{
+  const stoneMat = new THREE.MeshLambertMaterial({color:0x9aa08a});
+  const darkMat = new THREE.MeshLambertMaterial({color:0x6e7462});
+  const ruinGroup = new THREE.Group();
+  for (let i=0;i<3;i++){
+    const s = 16 - i*4.5;
+    const step = new THREE.Mesh(new THREE.BoxGeometry(s, 0.45, s), i%2?darkMat:stoneMat);
+    step.position.y = 1.1 + i*2.2;
+    step.castShadow = true; step.receiveShadow = true;
+    ruinGroup.add(step);
+  }
+  for (let i=0;i<8;i++){
+    const a = i/8*Math.PI*2;
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 9, 8), stoneMat);
+    p.position.set(Math.cos(a)*22, 4.5, Math.sin(a)*22);
+    p.castShadow = true;
+    ruinGroup.add(p);
+    colliders.push({x:p.position.x, z:p.position.z-120, r:1.5});
+  }
+  ruinGroup.position.set(0, 0.5, -120);
+  scene.add(ruinGroup);
+}
+
+const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.5, 2.6, 8),
+  new THREE.MeshLambertMaterial({color:0x777d68}));
+pedestal.position.set(0, 3.4, -120);
+scene.add(pedestal);
+
+const goldMat = new THREE.MeshPhongMaterial({color:0xffd54a, emissive:0x6a5200, shininess:100});
+const idol = new THREE.Group();
+{
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 1.2, 8), goldMat);
+  body.position.y = 0.6;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), goldMat);
+  head.position.y = 1.5;
+  head.scale.set(1, 0.85, 1.1);
+  const ear1 = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.35, 5), goldMat);
+  ear1.position.set(0.32, 1.78, 0);
+  const ear2 = ear1.clone(); ear2.position.x = -0.32;
+  idol.add(body, head, ear1, ear2);
+}
+idol.position.set(0, 4.7, -120);
+idol.castShadow = true;
+scene.add(idol);
+const idolGlow = new THREE.PointLight(0xffc94a, 1.2, 18);
+idolGlow.position.copy(idol.position);
+scene.add(idolGlow);
+
+// ------------------- expedition boat (finish point) -------------------
+{
+  const boat = new THREE.Group();
+  const hullMat = new THREE.MeshLambertMaterial({color:0x8a5a33});
+  const hull = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 1.4, 9, 10, 1, false, 0, Math.PI), hullMat);
+  hull.rotation.z = Math.PI/2;
+  hull.rotation.y = Math.PI/2;
+  hull.scale.y = 0.7;
+  hull.position.y = 0.5;
+  boat.add(hull);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.25, 3.6), hullMat);
+  deck.position.y = 1.1;
+  boat.add(deck);
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.4, 2.6), new THREE.MeshLambertMaterial({color:0xd9c9a3}));
+  cabin.position.set(-1.5, 1.8, 0);
+  boat.add(cabin);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 3, 6), hullMat);
+  pole.position.set(2.6, 2.6, 0);
+  boat.add(pole);
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.7), new THREE.MeshLambertMaterial({color:0xe74c3c, side:THREE.DoubleSide}));
+  flag.position.set(3.2, 3.7, 0);
+  boat.add(flag);
+  boat.position.set(6, -0.45, 187);
+  boat.rotation.y = 0.4;
+  scene.add(boat);
+}
+
+// ------------------- gems -------------------
+const gemColor = 0x35f0ff;
+const gems = [];
+const gemGroup = new THREE.Group();
+scene.add(gemGroup);
+for (let i=0;i<10;i++){
+  let x, z, tries = 0;
+  do {
+    x = (Math.random()*2-1)*(WORLD-12);
+    z = (Math.random()*2-1)*(WORLD-12);
+    tries++;
+  } while ((inRiver(z) && tries < 40) || nearStart(x,z));
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 0),
+    new THREE.MeshPhongMaterial({color:gemColor, emissive:0x0a6a70, shininess:120, transparent:true, opacity:0.92}));
+  const h = terrainH(x,z);
+  gem.position.set(x, h + 1.6, z);
+  gemGroup.add(gem);
+  const light = new THREE.PointLight(gemColor, 0.7, 8);
+  light.position.copy(gem.position);
+  gemGroup.add(light);
+  gems.push({mesh:gem, light, x, z, taken:false, base:h+1.6});
+}
+
+// ------------------- wildlife -------------------
+// Birds
+const birds = [];
+const birdMat = new THREE.MeshLambertMaterial({color:0xe63946});
+for (let i=0;i<14;i++){
+  const b = new THREE.Group();
+  const bodyM = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.1, 6), birdMat);
+  bodyM.rotation.x = Math.PI/2;
+  const wingGeo = new THREE.PlaneGeometry(1.1, 0.4);
+  const wl = new THREE.Mesh(wingGeo, new THREE.MeshLambertMaterial({color:0xff6b6b, side:THREE.DoubleSide}));
+  wl.position.x = 0.55;
+  const wr = wl.clone(); wr.position.x = -0.55;
+  b.add(bodyM, wl, wr);
+  b.userData = {wl, wr, r: 40+Math.random()*80, a: Math.random()*Math.PI*2,
+    h: 22+Math.random()*20, cx:(Math.random()*2-1)*60, cz:(Math.random()*2-1)*60, sp:0.25+Math.random()*0.4};
+  scene.add(b);
+  birds.push(b);
+}
+// Butterflies
+const butterflies = [];
+for (let i=0;i<30;i++){
+  const bf = new THREE.Group();
+  const wgeo = new THREE.PlaneGeometry(0.28, 0.22);
+  const wm = new THREE.MeshLambertMaterial({color: new THREE.Color().setHSL(Math.random(), 0.9, 0.6), side:THREE.DoubleSide});
+  const w1 = new THREE.Mesh(wgeo, wm); w1.position.x = 0.14;
+  const w2 = new THREE.Mesh(wgeo, wm); w2.position.x = -0.14;
+  bf.add(w1, w2);
+  bf.scale.setScalar(1.4);
+  bf.userData = {w1, w2, cx:(Math.random()*2-1)*180, cz:(Math.random()*2-1)*180,
+    r:4+Math.random()*8, a:Math.random()*Math.PI*2, h:1+Math.random()*2.5, sp:0.4+Math.random()*0.6};
+  scene.add(bf);
+  butterflies.push(bf);
+}
+// Monkeys (brown spheres hopping near ruins path)
+const monkeys = [];
+const monkMat = new THREE.MeshLambertMaterial({color:0x7a4f2b});
+for (let i=0;i<6;i++){
+  const m = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 7), monkMat);
+  body.position.y = 0.55; body.scale.set(1,1.2,1);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 7), monkMat);
+  head.position.y = 1.25;
+  const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.03,1.1,5), monkMat);
+  tail.position.set(0, 0.8, -0.5); tail.rotation.x = 1.1;
+  m.add(body, head, tail);
+  m.userData = {cx:(Math.random()*2-1)*100, cz:60+Math.random()*80, r:5+Math.random()*6,
+    a:Math.random()*Math.PI*2, hop:Math.random()*6, sp:0.3+Math.random()*0.3};
+  scene.add(m);
+  monkeys.push(m);
+}
+
+// ------------------- player & controls -------------------
+const player = {
+  pos: new THREE.Vector3(0, 0, 180),
+  vel: new THREE.Vector3(),
+  yaw: 0, pitch: 0,
+  onGround: true,
+  energy: 100, score: 0, gems: 0, hasIdol: false, idolScored: false
+};
+const EYE = 1.7, SPEED = 7.5, SPRINT = 12, JUMP = 8.5, GRAV = 22;
+
+const keys = {};
+let paused = true;
+let pointerLocked = false;
+
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Escape' && !paused) showPause(true);
+  if (e.code === 'KeyE') tryPickup();
+});
+document.addEventListener('keyup', e => keys[e.code] = false);
+
+function lockPointer(){
+  if (document.pointerLockElement !== canvas){
+    try {
+      const p = canvas.requestPointerLock();
+      if (p && p.catch) p.catch(()=>{});
+    } catch(e){}
+  }
+}
+canvas.addEventListener('click', () => { if (!paused) lockPointer(); });
+document.addEventListener('pointerlockchange', () => {
+  pointerLocked = document.pointerLockElement === canvas;
+  if (!pointerLocked && !paused) showPause(true);
+});
+document.addEventListener('mousemove', e => {
+  if (!pointerLocked || paused) return;
+  player.yaw -= e.movementX * 0.0023;
+  player.pitch -= e.movementY * 0.0023;
+  player.pitch = Math.max(-1.5, Math.min(1.5, player.pitch));
+});
+
+const startOverlay = document.getElementById('startOverlay');
+const pauseOverlay = document.getElementById('pauseOverlay');
+const winOverlay = document.getElementById('winOverlay');
+const hint = document.getElementById('hint');
+document.getElementById('startBtn').onclick = () => {
+  startOverlay.style.display = 'none';
+  paused = false;
+  lockPointer();
+};
+document.getElementById('resumeBtn').onclick = () => showPause(false);
+document.getElementById('freeBtn').onclick = () => {
+  winOverlay.style.display = 'none';
+  paused = false;
+  lockPointer();
+};
+function showPause(on){
+  paused = on;
+  pauseOverlay.style.display = on ? 'flex' : 'none';
+  for (const key of Object.keys(keys)) keys[key] = false;
+  if (on && pointerLocked) document.exitPointerLock();
+  if (!on) lockPointer();
+}
+
+// ------------------- pickups -------------------
+let hintItem = null;
+function nearestGem(){
+  let best = null, bd = 3.2;
+  for (const g of gems){
+    if (g.taken) continue;
+    const d = Math.hypot(g.x - player.pos.x, g.z - player.pos.z);
+    if (d < bd){ bd = d; best = g; }
+  }
+  return best;
+}
+function tryPickup(){
+  if (paused) return;
+  const g = nearestGem();
+  if (g){
+    g.taken = true;
+    gemGroup.remove(g.mesh); gemGroup.remove(g.light);
+    player.score += 10;
+    player.energy = Math.min(100, player.energy + 8);
+    sfx(880, 0.12); setTimeout(()=>sfx(1320, 0.15), 90);
+    updateHUD();
+    return;
+  }
+  if (!player.hasIdol && Math.hypot(player.pos.x, player.pos.z + 120) < 3.4){
+    player.hasIdol = true;
+    idol.visible = false;
+    idolGlow.intensity = 0;
+    player.score += 50;
+    sfx(520, 0.2); setTimeout(()=>sfx(780, 0.25), 150);
+    showHint('You took the GOLDEN IDOL! Bring it back to the boat.', 4000);
+    updateHUD();
+  }
+}
+
+// ------------------- audio -------------------
+let AC = null;
+function sfx(freq, dur, type){
+  try {
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.15, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
+    o.connect(g).connect(AC.destination);
+    o.start(); o.stop(AC.currentTime + dur);
+  } catch(e){}
+}
+
+// ------------------- HUD & minimap -------------------
+const energyBar = document.getElementById('energyBar');
+const scoreEl = document.getElementById('score');
+const gemsEl = document.getElementById('gems');
+function updateHUD(){
+  energyBar.style.width = player.energy + '%';
+  scoreEl.textContent = 'Score: ' + player.score;
+  gemsEl.textContent = 'Gems: ' + gems.filter(g=>g.taken).length + ' / 10';
+}
+updateHUD();
+
+const mm = document.getElementById('minimap').getContext('2d');
+function drawMinimap(){
+  const S = 170, half = S/2, scale = half/WORLD;
+  mm.clearRect(0,0,S,S);
+  mm.fillStyle = 'rgba(10,40,15,0.75)';
+  mm.fillRect(0,0,S,S);
+  // river
+  mm.fillStyle = 'rgba(40,140,190,0.9)';
+  const rz1 = half + RIVER_Z1*scale, rz2 = half + RIVER_Z2*scale;
+  mm.fillRect(0, rz1, S, rz2-rz1);
+  // ruins
+  mm.fillStyle = '#c9c9a8';
+  mm.fillRect(half-6, half-120*scale-6, 12, 12);
+  // trees
+  mm.fillStyle = 'rgba(70,160,70,0.8)';
+  for (const [tx,tz] of minimapTrees){
+    mm.fillRect(half+tx*scale-1, half+tz*scale-1, 2, 2);
+  }
+  // gems
+  for (const g of gems){
+    if (g.taken) continue;
+    mm.fillStyle = '#35f0ff';
+    mm.beginPath();
+    mm.arc(half+g.x*scale, half+g.z*scale, 2.5, 0, 7);
+    mm.fill();
+  }
+  // idol
+  if (!player.hasIdol && !player.idolScored){
+    mm.fillStyle = '#ffd54a';
+    mm.fillRect(half-2, half-120*scale-2, 4, 4);
+  }
+  // player
+  mm.save();
+  mm.translate(half + player.pos.x*scale, half + player.pos.z*scale);
+  mm.rotate(-player.yaw + Math.PI);
+  mm.fillStyle = '#fff';
+  mm.beginPath();
+  mm.moveTo(0,-5); mm.lineTo(3.5,4); mm.lineTo(-3.5,4);
+  mm.closePath(); mm.fill();
+  mm.restore();
+}
+
+let hintTimer = null;
+function showHint(text, ms){
+  hint.textContent = text;
+  hint.style.display = 'block';
+  clearTimeout(hintTimer);
+  if (ms) hintTimer = setTimeout(()=>hint.style.display='none', ms);
+}
+
+// ------------------- physics & update -------------------
+function collide(x, z){
+  for (const c of colliders){
+    const dx = x - c.x, dz = z - c.z;
+    const d2 = dx*dx + dz*dz;
+    const r = c.r + 0.5;
+    if (d2 < r*r){
+      const d = Math.sqrt(d2) || 0.001;
+      const push = (r - d);
+      return {x: dx/d*push, z: dz/d*push};
+    }
+  }
+  return null;
+}
+
+let elapsed = 0;
+let bobT = 0;
+
+function update(dt){
+  // movement
+  const fwd = (keys.KeyW?1:0) - (keys.KeyS?1:0);
+  const strafe = (keys.KeyD?1:0) - (keys.KeyA?1:0);
+  const sprinting = (keys.ShiftLeft || keys.ShiftRight) && player.energy > 1;
+  const speed = sprinting ? SPRINT : SPEED;
+  if (sprinting && (fwd || strafe)) player.energy = Math.max(0, player.energy - dt*4);
+  else player.energy = Math.min(100, player.energy + dt*1.5);
+
+  const sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
+  let vx = 0, vz = 0;
+  if (fwd || strafe){
+    vx = (-sin*fwd + cos*strafe);
+    vz = (-cos*fwd - sin*strafe);
+    const l = Math.hypot(vx, vz);
+    vx = vx/l*speed; vz = vz/l*speed;
+    bobT += dt * (sprinting?11:7);
+  }
+
+  // jump / gravity
+  if (keys.Space && player.onGround){
+    player.vel.y = JUMP;
+    player.onGround = false;
+  }
+  player.vel.y -= GRAV*dt;
+
+  let nx = player.pos.x + (vx + player.vel.x*0)*dt;
+  let nz = player.pos.z + (vz)*dt;
+  nx = Math.max(-WORLD+2, Math.min(WORLD-2, nx));
+  nz = Math.max(-WORLD+2, Math.min(WORLD-2, nz));
+
+  // tree collision push-out
+  const push = collide(nx, nz);
+  if (push){ nx += push.x; nz += push.z; }
+
+  player.pos.x = nx; player.pos.z = nz;
+  const groundY = Math.max(terrainH(nx, nz), -0.55);
+  let y = player.pos.y + player.vel.y*dt;
+  if (y <= groundY){
+    y = groundY;
+    player.vel.y = 0;
+    player.onGround = true;
+  } else {
+    player.onGround = false;
+  }
+  // wading slows you
+  const wading = nz > RIVER_Z1 && nz < RIVER_Z2;
+  if (wading) player.energy = Math.max(0, player.energy - dt*0.8);
+
+  player.pos.y = y;
+  const bob = player.onGround && (fwd||strafe) ? Math.sin(bobT)*0.06 : 0;
+  camera.position.set(nx, y + EYE + bob, nz);
+  camera.rotation.set(player.pitch, player.yaw, 0);
+
+  // drowning warning
+  if (wading) showHint('Wading... watch your energy!', 600);
+
+  // animate gems
+  const t = elapsed += dt;
+  for (const g of gems){
+    if (g.taken) continue;
+    g.mesh.rotation.y = t*2;
+    g.mesh.position.y = g.base + Math.sin(t*2 + g.x)*0.25;
+  }
+  idol.rotation.y = t*1.2;
+  if (idol.visible) idol.position.y = 4.7 + Math.sin(t*2)*0.15;
+
+  // clouds
+  for (const c of clouds){
+    c.position.x += dt*1.2;
+    if (c.position.x > 240) c.position.x = -240;
+  }
+  // birds
+  for (const b of birds){
+    const u = b.userData;
+    u.a += dt*u.sp;
+    b.position.set(u.cx + Math.cos(u.a)*u.r, u.h + Math.sin(u.a*3)*2, u.cz + Math.sin(u.a)*u.r);
+    b.rotation.y = -u.a;
+    const flap = Math.sin(t*10 + u.a*5)*0.6;
+    u.wl.rotation.z = flap; u.wr.rotation.z = -flap;
+  }
+  // butterflies
+  for (const bf of butterflies){
+    const u = bf.userData;
+    u.a += dt*u.sp;
+    bf.position.set(u.cx + Math.cos(u.a)*u.r, terrainH(bf.position.x, bf.position.z) + u.h + Math.sin(t*3+u.a)*0.4, u.cz + Math.sin(u.a)*u.r);
+    const f = Math.sin(t*16)*0.8;
+    u.w1.rotation.y = f; u.w2.rotation.y = -f;
+  }
+  // monkeys hop around
+  for (const m of monkeys){
+    const u = m.userData;
+    u.a += dt*u.sp;
+    u.hop += dt*6;
+    const mx = u.cx + Math.cos(u.a)*u.r;
+    const mz = u.cz + Math.sin(u.a)*u.r;
+    m.position.set(mx, terrainH(mx, mz) + Math.abs(Math.sin(u.hop += dt*4))*0.5, mz);
+    m.rotation.y = -u.a;
+  }
+
+  // gem hint
+  const ng = nearestGem();
+  if (ng) showHint('Press E to collect the glowing gem');
+  else if (!player.hasIdol && !player.idolScored && Math.hypot(player.pos.x, player.pos.z+120) < 6)
+    showHint('Press E to take the GOLDEN IDOL');
+  else if (player.hasIdol && !player.idolScored && Math.hypot(player.pos.x, player.pos.z-180) < 12){
+    player.idolScored = true;
+    player.score += 40;
+    sfx(660,0.2); setTimeout(()=>sfx(880,0.2),150); setTimeout(()=>sfx(1100,0.3),300);
+    paused = true;
+    for (const key of Object.keys(keys)) keys[key] = false;
+    document.exitPointerLock();
+    document.getElementById('winText').innerHTML =
+      'You returned the Golden Idol to the expedition boat!<br>' +
+      'Final score: <b>' + player.score + '</b> &mdash; gems collected: ' +
+      gems.filter(g=>g.taken).length + '/10';
+    winOverlay.style.display = 'flex';
+    }
+  else hint.style.display = 'none';
+
+  // energy regen penalty
+  if (player.energy <= 0){
+    showHint('Exhausted! Rest a moment...', 2000);
+  }
+
+  water.material.opacity = 0.68 + Math.sin(t*1.5)*0.06;
+  water.position.y = -0.55 + Math.sin(t*0.8)*0.06;
+
+  updateHUD();
+  drawMinimap();
+}
+
+function inWater(){
+  return player.pos.z > RIVER_Z1 && player.pos.z < RIVER_Z2;
+}
+
+// ------------------- main loop -------------------
+let last = performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt = Math.min((now - last)/1000, 0.05);
+  last = now;
+  if (!paused) update(dt);
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(loop);
+camera.position.set(0, terrainH(0,180) + EYE, 180);
+camera.rotation.y = 0;
+
+window.__game = {player, gems, idol, terrainH, tryPickup, state: () => ({
+  score: player.score, hasIdol: player.hasIdol, idolScored: player.idolScored,
+  gemsTaken: gems.filter(g=>g.taken).length, paused,
+  winVisible: winOverlay.style.display === 'flex',
+  pos: {x: player.pos.x.toFixed(1), y: player.pos.y.toFixed(1), z: player.pos.z.toFixed(1)}
+})};
+})();
+</script>
+</body>
+</html>
