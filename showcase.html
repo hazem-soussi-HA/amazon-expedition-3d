@@ -512,7 +512,7 @@ footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)
       <div class="stat e"><div class="n"><span data-count="12321" data-fmt="comma">0</span></div><div class="l">Terrain vertices</div><div class="s">A 110 × 110 displaced grid, normals recomputed per frame of generation.</div></div>
       <div class="stat"><div class="n"><span data-count="730">0</span></div><div class="l">Placed objects</div><div class="s">240 trees · 70 rocks · 420 grass tufts, all instanced as primitives.</div></div>
       <div class="stat b"><div class="n"><span data-count="50">0</span></div><div class="l">Wildlife agents</div><div class="s">14 birds, 30 butterflies, 6 monkeys — each on its own orbit.</div></div>
-      <div class="stat g"><div class="n"><span data-count="747">0</span></div><div class="l">Lines of shippable code</div><div class="s">Game, HUD, audio and world in a single <code>amazon_3d.html</code>.</div></div>
+      <div class="stat g"><div class="n"><span data-count="1127">0</span></div><div class="l">Lines of shippable code</div><div class="s">Game, HUD, audio, world, gear and the AI team in a single <code>amazon_3d.html</code>.</div></div>
     </div>
 
     <div class="grid g3" style="margin-top:24px">
@@ -881,7 +881,7 @@ footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)
     <div class="hd rv">
       <span class="eyebrow"><span class="dot"></span>06 — Craft</span>
       <h2>What the build is made of.</h2>
-      <p class="lede">No framework, no bundler, no package manager. The dependency graph fits in one sentence — and that constraint is the reason the code stayed readable enough to ship in a single sitting.</p>
+      <p class="lede">No framework, no bundler, no package manager, no assets. The dependency graph fits in one sentence — and that constraint is the reason the code stayed readable enough to ship in a single sitting.</p>
     </div>
 
     <div class="grid g2">
@@ -922,7 +922,7 @@ footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)
       <div class="stat"><div class="n" style="font-size:30px"><span data-count="2048">0</span><span style="font-size:16px;color:var(--ink-3)">²</span></div><div class="l">Shadow map</div><div class="s">PCF soft shadows on a single directional key light.</div></div>
       <div class="stat b"><div class="n" style="font-size:30px"><span data-count="420">0</span></div><div class="l">World units wide</div><div class="s">A 210-unit radius, hard-clamped at the treeline.</div></div>
       <div class="stat e"><div class="n" style="font-size:30px"><span data-count="0.05" data-dec="2">0</span><span style="font-size:16px;color:var(--ink-3)">s</span></div><div class="l">Frame clamp</div><div class="s">Delta time is capped so a stalled tab can't teleport the player.</div></div>
-      <div class="stat g"><div class="n" style="font-size:30px"><span data-count="4">0</span></div><div class="l">Files shipped</div><div class="s">One game file, one vendored runtime, one dossier, one readme.</div></div>
+      <div class="stat g"><div class="n" style="font-size:30px"><span data-count="8">0</span></div><div class="l">Files shipped</div><div class="s">One game file, one vendored runtime, one dossier, one readme, one license, one build script.</div></div>
     </div>
   </div>
 </section>
@@ -977,12 +977,12 @@ footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)
           <dt>Art direction</dt><dd>Hazem Soussi — all geometry procedural</dd>
           <dt>Identity &amp; type</dt><dd>In-house SVG system, this dossier</dd>
           <dt>Technology</dt><dd>Three.js r128, WebGL, Web Audio, Pointer Lock</dd>
-          <dt>Assistance</dt><dd>AI-assisted authoring and code review</dd>
+          <dt>Assistance</dt><dd>AI-assisted authoring and code review — including the three-teammate AI and the frame upgrades</dd>
           <dt>Assets</dt><dd>None — 100% generated at runtime</dd>
         </dl>
         <div class="mono-box">
-          <div><b>FILES</b> amazon_3d.html · showcase.html · three.min.js · README.md</div>
-          <div><b>SIZE</b> <span class="g">26 KB</span> game logic, <span class="c">603 KB</span> vendored runtime</div>
+          <div><b>FILES</b> amazon_3d.html · showcase.html · three.min.js · README.md · LICENSE · build.sh · index.html · dist/</div>
+          <div><b>SIZE</b> <span class="g">38 KB</span> game logic, <span class="c">603 KB</span> vendored runtime</div>
           <div><b>DEPS</b> one · Three.js r128</div>
           <div><b>BUILD</b> none · open the file</div>
         </div>

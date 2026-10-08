@@ -64,9 +64,9 @@
 <div class="overlay" id="startOverlay">
   <h1>AMAZON EXPEDITION 3D</h1>
   <p style="opacity:.8;font-size:13px;margin-top:-4px">&copy; 2026 Hazem Soussi &mdash; all rights reserved</p>
-  <p>Deep in the rainforest, the lost Temple of the Jaguar hides a <b>Golden Idol</b>.
-     Collect the 10 glowing gems scattered across the jungle, meet the wildlife,
-     and cross the great river... the jungle is alive.</p>
+  <p>The lost Temple of the Jaguar hides a <b>Golden Idol</b>. Take it, cross the great river,
+     and bring it back to your expedition boat — collecting the 10 glowing gems on the way.
+     And don't be surprised to run into the team: three explorers are out here too.</p>
   <button class="btn" id="startBtn">ENTER THE JUNGLE</button>
   <div class="keys">
     <kbd>W A S D</kbd> move &nbsp; <kbd>Mouse</kbd> look &nbsp; <kbd>Shift</kbd> sprint &nbsp;
@@ -165,13 +165,42 @@ const ground = new THREE.Mesh(gGeo, new THREE.MeshLambertMaterial({color:0x3f7a2
 ground.receiveShadow = true;
 scene.add(ground);
 
-const water = new THREE.Mesh(
-  new THREE.PlaneGeometry(WORLD*2, RIVER_Z2-RIVER_Z1),
-  new THREE.MeshPhongMaterial({color:0x1f7fae, transparent:true, opacity:0.72, shininess:90})
-);
-water.rotation.x = -Math.PI/2;
+// vertex-colour the ground: lush green inland, wet mud along the riverbank,
+// lighter on the ridges, with a fine noise speckle. One pass, zero runtime cost.
+{
+  const pos = gGeo.attributes.position, n = pos.count;
+  const colors = new Float32Array(n*3);
+  const green = new THREE.Color(0x5a9a3c), mud = new THREE.Color(0x7a5a34), c = new THREE.Color();
+  for (let i=0;i<n;i++){
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const shore = Math.max(0, 1 - Math.min(Math.abs(z-RIVER_Z1), Math.abs(z-RIVER_Z2))/6);
+    c.copy(green).lerp(mud, shore*0.8);
+    c.offsetHSL(0, 0, Math.max(-0.1, Math.min(0.16, y*0.022)));
+    c.offsetHSL(0, 0, Math.sin(x*1.9)*Math.cos(z*1.4)*0.02);
+    colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+  }
+  gGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  ground.material.vertexColors = true;
+}
+
+const waterGeo = new THREE.PlaneGeometry(WORLD*2, RIVER_Z2-RIVER_Z1, 26, 3);
+waterGeo.rotateX(-Math.PI/2);
+const waterBase = Float32Array.from(waterGeo.attributes.position.array);
+const water = new THREE.Mesh(waterGeo,
+  new THREE.MeshPhongMaterial({color:0x1f7fae, transparent:true, opacity:0.72, shininess:90}));
 water.position.set(0, -0.55, (RIVER_Z1+RIVER_Z2)/2);
 scene.add(water);
+
+// the river breathes: two crossing sine waves over a coarse mesh
+function updateWater(t){
+  const pos = waterGeo.attributes.position;
+  for (let i=0;i<pos.count;i++){
+    const x = waterBase[i*3], z = waterBase[i*3+2];
+    pos.setY(i, Math.sin(x*0.35 + t*1.7)*0.09 + Math.sin(z*0.6 - t*1.2)*0.06);
+  }
+  pos.needsUpdate = true;
+  waterGeo.computeVertexNormals();
+}
 
 // ------------------- vegetation & rocks -------------------
 const colliders = [];
@@ -251,6 +280,87 @@ for (let i=0;i<10;i++){
   c.scale.y = 0.35;
   scene.add(c);
   clouds.push(c);
+}
+
+// ------------------- atmosphere: mist, fireflies, ridges, canopy -------------------
+function radialTexture(stops){
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 128;
+  const ctx = cv.getContext('2d');
+  const g = ctx.createRadialGradient(64,64,0,64,64,64);
+  for (const s of stops) g.addColorStop(s[0], s[1]);
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,128,128);
+  return new THREE.CanvasTexture(cv);
+}
+
+// ground mist, drifting just above the forest floor
+const mistTex = radialTexture([
+  [0,'rgba(236,250,240,0.50)'], [0.55,'rgba(212,236,222,0.16)'], [1,'rgba(212,236,222,0)']
+]);
+const mists = [];
+for (let i=0;i<8;i++){
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(70+Math.random()*50, 26+Math.random()*20),
+    new THREE.MeshBasicMaterial({map:mistTex, color:0xdcf3e4, transparent:true,
+      opacity:0.09+Math.random()*0.06, depthWrite:false})
+  );
+  const x = (Math.random()*2-1)*(WORLD-30), z = (Math.random()*2-1)*(WORLD-30);
+  m.position.set(x, terrainH(x,z)+1.5+Math.random()*1.6, z);
+  m.rotation.x = -Math.PI/2;
+  m.rotation.z = Math.random()*Math.PI*2;
+  m.userData = {sp:0.12+Math.random()*0.22, rot:(Math.random()-0.5)*0.05};
+  scene.add(m);
+  mists.push(m);
+}
+
+// fireflies: brightest around the temple, where the jungle feels oldest
+const glowTex = radialTexture([
+  [0,'rgba(255,248,205,0.95)'], [0.35,'rgba(255,225,120,0.45)'], [1,'rgba(255,200,60,0)']
+]);
+const flies = [];
+for (let i=0;i<28;i++){
+  const atTemple = Math.random() < 0.6;
+  const f = new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex, color:0xffe98a,
+    blending:THREE.AdditiveBlending, transparent:true, depthWrite:false}));
+  f.userData = {
+    cx: atTemple ? (Math.random()*2-1)*40 : (Math.random()*2-1)*160,
+    cz: atTemple ? -120+(Math.random()*2-1)*40 : (Math.random()*2-1)*160,
+    r: 1.5+Math.random()*7, a: Math.random()*6.28, sp: 0.2+Math.random()*0.5,
+    h: 0.6+Math.random()*3.4, ph: Math.random()*6.28
+  };
+  scene.add(f);
+  flies.push(f);
+}
+
+// distant ridges so the world does not dissolve straight into fog
+for (let i=0;i<16;i++){
+  const a = i/16*Math.PI*2 + Math.random()*0.2;
+  const rad = 205+Math.random()*40, h = 26+Math.random()*46;
+  const ridge = new THREE.Mesh(new THREE.ConeGeometry(24+Math.random()*22, h, 5),
+    new THREE.MeshBasicMaterial({color:0x8fb98d}));
+  ridge.position.set(Math.cos(a)*rad, h/2-6, Math.sin(a)*rad);
+  ridge.rotation.y = Math.random()*6.28;
+  scene.add(ridge);
+}
+
+// canopy overhead: frames the sky and dapples the light on the forest floor
+{
+  const canopyMat = new THREE.MeshLambertMaterial({color:0x14401d});
+  for (let i=0;i<12;i++){
+    const x = (Math.random()*2-1)*120, z = -100+Math.random()*230;
+    if (inRiver(z)) continue;
+    const cl = new THREE.Group();
+    for (let j=0;j<2;j++){
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(3.4+Math.random()*2.2, 6, 5), canopyMat);
+      leaf.position.set((Math.random()-0.5)*5, Math.random()*2.5, (Math.random()-0.5)*5);
+      leaf.scale.y = 0.55;
+      leaf.castShadow = true;
+      cl.add(leaf);
+    }
+    cl.position.set(x, terrainH(x,z)+16+Math.random()*3, z);
+    scene.add(cl);
+  }
 }
 
 // ------------------- ruins & idol -------------------
@@ -403,6 +513,189 @@ for (let i=0;i<6;i++){
   monkeys.push(m);
 }
 
+// ------------------- the expedition team -------------------
+// You are not alone out here. Three teammates are running the same expedition:
+// they wander their own patch of jungle, stop to admire it, and wave when they
+// see you. Built from primitives on purpose - no rigs, no assets, one file.
+const TEAM_NAMES = ['MARCO', 'ELENA', 'KAI'];
+const teamMats = {
+  shirt: [0xc96f4a, 0x4a7ec9, 0x6aa84f].map(c => new THREE.MeshLambertMaterial({color:c})),
+  pants: new THREE.MeshLambertMaterial({color:0x5a4a33}),
+  skin : [0xe0ac69, 0xc68642, 0x8d5524].map(c => new THREE.MeshLambertMaterial({color:c})),
+  hat  : new THREE.MeshLambertMaterial({color:0xcbb98a}),
+  pack : new THREE.MeshLambertMaterial({color:0x7a5c3a}),
+  boot : new THREE.MeshLambertMaterial({color:0x3f3226})
+};
+const unitBox = new THREE.BoxGeometry(1,1,1);
+const handGeo = new THREE.SphereGeometry(0.085, 6, 5);
+
+function boxMesh(w,h,d,mat){
+  const m = new THREE.Mesh(unitBox, mat);
+  m.scale.set(w,h,d);
+  m.castShadow = true;
+  return m;
+}
+// a limb pivots from its top joint, so the mesh hangs below the group origin
+function limb(w,h,d,mat){
+  const g = new THREE.Group();
+  const m = boxMesh(w,h,d,mat);
+  m.position.y = -h/2;
+  g.add(m);
+  return g;
+}
+
+function makeExplorer(i){
+  const shirt = teamMats.shirt[i], skin = teamMats.skin[i];
+  const g = new THREE.Group();
+
+  const torso = boxMesh(0.5,0.62,0.3, shirt); torso.position.y = 1.12;
+  const belt  = boxMesh(0.44,0.12,0.28, teamMats.pants); belt.position.y = 0.78;
+  const head  = new THREE.Mesh(new THREE.SphereGeometry(0.17,10,8), skin);
+  head.position.y = 1.6; head.castShadow = true;
+  const brim  = new THREE.Mesh(new THREE.CylinderGeometry(0.29,0.31,0.04,12), teamMats.hat);
+  brim.position.y = 1.72; brim.castShadow = true;
+  const dome  = new THREE.Mesh(new THREE.SphereGeometry(0.155,10,6,0,6.3,0,Math.PI/2), teamMats.hat);
+  dome.position.y = 1.75;
+  const pack  = boxMesh(0.36,0.44,0.22, teamMats.pack); pack.position.set(0,1.12,-0.26);
+  const roll  = boxMesh(0.3,0.16,0.2, teamMats.hat); roll.position.set(0,0.9,-0.34);
+
+  const armL = limb(0.15,0.52,0.15, shirt); armL.position.set(-0.32,1.36,0);
+  const armR = armL.clone(); armR.position.x = 0.32;
+  const handL = new THREE.Mesh(handGeo, skin); handL.position.y = -0.62; armL.add(handL);
+  const handR = new THREE.Mesh(handGeo, skin); handR.position.y = -0.62; armR.add(handR);
+
+  const legL = limb(0.17,0.44,0.17, teamMats.pants); legL.position.set(-0.13,0.74,0);
+  const legR = legL.clone(); legR.position.x = 0.13;
+  const shinL = limb(0.14,0.42,0.14, teamMats.pants); shinL.position.y = -0.44; legL.add(shinL);
+  const shinR = limb(0.14,0.42,0.14, teamMats.pants); shinR.position.y = -0.44; legR.add(shinR);
+  const bootL = boxMesh(0.16,0.12,0.26, teamMats.boot); bootL.position.set(0,-0.84,0.05); legL.add(bootL);
+  const bootR = boxMesh(0.16,0.12,0.26, teamMats.boot); bootR.position.set(0,-0.84,0.05); legR.add(bootR);
+
+  g.add(torso, belt, head, brim, dome, pack, roll, armL, armR, legL, legR);
+  g.scale.setScalar(1.02);
+  return {g, parts:{armL, armR, legL, legR, shinL, shinR, torso, head}};
+}
+
+const team = [];
+const TEAM_ANCHORS = [
+  {x:-10, z: 168, r: 24, scout:true },   // at camp, near the boat with you
+  {x: 26, z:-98,  r: 32, scout:false},   // out by the temple
+  {x:-34, z:-62,  r: 38, scout:false}    // deeper in the green
+];
+function teamPickTarget(m){
+  for (let tries=0; tries<8; tries++){
+    const a = Math.random()*6.283, r = Math.random()*m.home.r;
+    const x = m.home.x + Math.cos(a)*r, z = m.home.z + Math.sin(a)*r;
+    if (Math.abs(x) > WORLD-12 || Math.abs(z) > WORLD-12) continue;
+    if (inRiver(z)) continue;
+    m.target.x = x; m.target.z = z;
+    return;
+  }
+  m.target.x = m.home.x; m.target.z = m.home.z;
+}
+function turnToward(cur, target, step){
+  let d = target - cur;
+  while (d >  Math.PI) d -= Math.PI*2;
+  while (d < -Math.PI) d += Math.PI*2;
+  return cur + Math.max(-step, Math.min(step, d));
+}
+
+for (let i=0;i<TEAM_NAMES.length;i++){
+  const e = makeExplorer(i);
+  scene.add(e.g);
+  const a = TEAM_ANCHORS[i];
+  team.push({
+    g:e.g, parts:e.parts, name:TEAM_NAMES[i], scout:a.scout,
+    home:{x:a.x, z:a.z, r:a.r},
+    x:a.x, z:a.z, yaw:Math.random()*6.28,
+    speed:1.5+i*0.15, phase:Math.random()*6,
+    target:{x:a.x, z:a.z}, state:'explore',
+    timer:2+Math.random()*4, joy:0, greetCd:0
+  });
+  teamPickTarget(team[i]);
+}
+
+// one shared wave pose and a shared footstep feel keep them reading as a team
+function updateTeam(dt, t){
+  const px = player.pos.x, pz = player.pos.z;
+  for (const m of team){
+    const p = m.parts;
+    m.greetCd = Math.max(0, m.greetCd - dt);
+    const dp = Math.hypot(px-m.x, pz-m.z);
+    let moving = false, speed = m.speed;
+
+    // the scout comes to check on you if you wander too far off
+    if (m.scout && dp > 120){ m.state = 'follow'; }
+
+    if (m.state === 'follow'){
+      const dx = px-m.x, dz = pz-m.z, d = dp || 1;
+      m.x += dx/d*3.2*dt; m.z += dz/d*3.2*dt;
+      m.yaw = Math.atan2(-dx, -dz);
+      moving = true; speed = 3.2;
+      if (dp < 26) m.state = 'explore';
+    } else if (m.state === 'explore'){
+      const dx = m.target.x-m.x, dz = m.target.z-m.z, d = Math.hypot(dx,dz);
+      if (d < 1.6){
+        m.state = 'admire';
+        m.timer = 3+Math.random()*4;
+        m.admire = Math.random()*6.283;
+      } else {
+        m.x += dx/d*speed*dt; m.z += dz/d*speed*dt;
+        m.yaw = turnToward(m.yaw, Math.atan2(-dx,-dz), dt*3);
+        moving = true;
+      }
+    } else if (m.state === 'admire'){
+      m.timer -= dt;
+      if (Math.sin(t*0.7 + m.admire) > 0.99) m.joy = 1;
+      if (m.timer <= 0){ m.state = 'explore'; teamPickTarget(m); }
+    } else if (m.state === 'greet'){
+      m.timer -= dt;
+      m.yaw = turnToward(m.yaw, Math.atan2(-(px-m.x), -(pz-m.z)), dt*5);
+      if (m.timer <= 0){ m.state = 'explore'; teamPickTarget(m); }
+    }
+
+    // they notice you when you come close
+    if (dp < 10 && m.greetCd === 0 && m.state !== 'greet' && !nearestGem()){
+      m.state = 'greet'; m.timer = 2.4; m.greetCd = 30;
+      showHint(m.name + ' waves at you — the team is out here too!', 2600);
+    }
+
+    // soft collision against the world, exactly like the player
+    const push = collide(m.x, m.z);
+    if (push){ m.x += push.x*0.8; m.z += push.z*0.8; }
+    m.x = Math.max(-WORLD+4, Math.min(WORLD-4, m.x));
+    m.z = Math.max(-WORLD+4, Math.min(WORLD-4, m.z));
+
+    // ---- procedural walk / idle animation ----
+    if (moving) m.phase += dt*(3.2 + speed*0.6);
+    const s = moving ? 1 : 0.12;
+    const sw = Math.sin(m.phase)*0.62*s, sw2 = Math.sin(m.phase+Math.PI)*0.62*s;
+    p.legL.rotation.x = sw;  p.legR.rotation.x = sw2;
+    p.shinL.rotation.x = Math.max(0, -sw*1.1);
+    p.shinR.rotation.x = Math.max(0, -sw2*1.1);
+    p.armL.rotation.x = sw2*0.75; p.armR.rotation.x = sw*0.75;
+    p.torso.rotation.x = -0.04 + Math.abs(Math.sin(m.phase))*0.03*s;
+    p.torso.rotation.z = Math.sin(m.phase)*0.03*s;
+
+    if (m.state === 'admire'){
+      p.armR.rotation.x = -1.3;                      // hand shading the eyes
+      p.armR.rotation.z = -0.15;
+      p.torso.rotation.x = -0.12;                    // leaning back to take in the canopy
+      p.head.position.y = 1.6 + Math.sin(t*1.2+m.admire)*0.012;
+    }
+    if (m.state === 'greet'){
+      const wave = Math.sin(t*9)*0.45;
+      p.armR.rotation.x = -1.5; p.armR.rotation.z = -0.5+wave;   // waving hello
+      p.armL.rotation.x = -0.25;
+    }
+
+    m.joy = Math.max(0, m.joy - dt*1.6);
+    const hop = Math.sin((1-m.joy)*Math.PI)*0.22;    // delighted little hop
+    m.g.position.set(m.x, terrainH(m.x,m.z) + Math.abs(Math.sin(m.phase))*0.035*s + hop, m.z);
+    m.g.rotation.y = m.yaw;
+  }
+}
+
 // ------------------- player & controls -------------------
 const player = {
   pos: new THREE.Vector3(0, 0, 180),
@@ -467,6 +760,58 @@ function showPause(on){
   if (!on) lockPointer();
 }
 
+// ------------------- first-person gear (sleeves, hands, machete) -------------------
+// The explorer's own body, seen from the inside: safari sleeves, bare forearms,
+// a machete in the right hand. Parented to the camera, so it is zero extra state.
+let punch = 0;                     // recoil when you pick something up
+const viewmodel = new THREE.Group();
+const skinMat  = new THREE.MeshLambertMaterial({color:0xc08a58});
+const shirtMat = new THREE.MeshLambertMaterial({color:0xcdbb8f});
+const cuffMat  = new THREE.MeshLambertMaterial({color:0xa89a6d});
+const steelMat = new THREE.MeshPhongMaterial({color:0x9aa6ad, shininess:90});
+const woodMat  = new THREE.MeshLambertMaterial({color:0x5c3f24});
+
+function makeArm(side){
+  const g = new THREE.Group();
+  const sleeve  = new THREE.Mesh(new THREE.BoxGeometry(0.19,0.34,0.19), shirtMat);
+  sleeve.position.y = -0.17;
+  const cuff    = new THREE.Mesh(new THREE.BoxGeometry(0.175,0.07,0.175), cuffMat);
+  cuff.position.y = -0.33;
+  const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.062,0.055,0.3,7), skinMat);
+  forearm.position.y = -0.51;
+  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.075,8,6), skinMat);
+  hand.scale.set(1,0.85,1.2);
+  hand.position.y = -0.66;
+  g.add(sleeve, cuff, forearm, hand);
+  g.position.set(side*0.27, -0.02, -0.72);
+  g.rotation.set(0.45, side*0.06, side*0.1);
+  viewmodel.add(g);
+  return g;
+}
+const armL = makeArm(-1);
+const armR = makeArm(1);
+
+// machete, held low in the right hand
+const machete = new THREE.Group();
+{
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.032,0.028,0.2,6), woodMat);
+  const guard  = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.02,0.03), steelMat);
+  guard.position.y = -0.1;
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.028,0.4,0.085), steelMat);
+  blade.position.y = -0.31;
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.045,0.14,4), steelMat);
+  tip.rotation.x = Math.PI/2;
+  tip.position.y = -0.56;
+  machete.add(handle, guard, blade, tip);
+}
+machete.position.set(0.01, -0.64, -0.05);
+machete.rotation.set(0.55, 0, 0.5);   // blade falls forward, away from the lens
+armR.add(machete);
+viewmodel.scale.setScalar(0.82);   // keeps the gear out of the middle of the view
+
+camera.add(viewmodel);
+scene.add(camera);   // the camera must be in the graph for its children to render
+
 // ------------------- pickups -------------------
 let hintItem = null;
 function nearestGem(){
@@ -486,6 +831,7 @@ function tryPickup(){
     gemGroup.remove(g.mesh); gemGroup.remove(g.light);
     player.score += 10;
     player.energy = Math.min(100, player.energy + 8);
+    punch = 1;
     sfx(880, 0.12); setTimeout(()=>sfx(1320, 0.15), 90);
     updateHUD();
     return;
@@ -495,6 +841,7 @@ function tryPickup(){
     idol.visible = false;
     idolGlow.intensity = 0;
     player.score += 50;
+    punch = 1;
     sfx(520, 0.2); setTimeout(()=>sfx(780, 0.25), 150);
     showHint('You took the GOLDEN IDOL! Bring it back to the boat.', 4000);
     updateHUD();
@@ -557,6 +904,13 @@ function drawMinimap(){
   if (!player.hasIdol && !player.idolScored){
     mm.fillStyle = '#ffd54a';
     mm.fillRect(half-2, half-120*scale-2, 4, 4);
+  }
+  // teammates on the map
+  mm.fillStyle = '#ffb347';
+  for (const m of team){
+    mm.beginPath();
+    mm.arc(half+m.x*scale, half+m.z*scale, 2.8, 0, 7);
+    mm.fill();
   }
   // player
   mm.save();
@@ -645,15 +999,25 @@ function update(dt){
   if (wading) player.energy = Math.max(0, player.energy - dt*0.8);
 
   player.pos.y = y;
+  const t = elapsed += dt;
   const bob = player.onGround && (fwd||strafe) ? Math.sin(bobT)*0.06 : 0;
   camera.position.set(nx, y + EYE + bob, nz);
   camera.rotation.set(player.pitch, player.yaw, 0);
+
+  // the explorer's own arms track the stride; wading lifts them clear of the river
+  punch = Math.max(0, punch - dt*3.5);
+  const stride = (fwd || strafe) ? 1 : 0;
+  const swing = Math.sin(bobT)*(sprinting?0.09:0.05)*stride;
+  armL.rotation.x = 0.45 + swing - (wading?0.5:0) - punch*0.3;
+  armR.rotation.x = 0.45 - swing - (wading?0.4:0) - punch*0.5;
+  armR.rotation.z = 0.12 - punch*0.3;
+  viewmodel.position.y = stride ? Math.abs(Math.sin(bobT))*0.022 : Math.sin(t*1.5)*0.008;
+  viewmodel.position.x = Math.sin(bobT*0.5)*0.01*stride;
 
   // drowning warning
   if (wading) showHint('Wading... watch your energy!', 600);
 
   // animate gems
-  const t = elapsed += dt;
   for (const g of gems){
     if (g.taken) continue;
     g.mesh.rotation.y = t*2;
@@ -720,6 +1084,21 @@ function update(dt){
     showHint('Exhausted! Rest a moment...', 2000);
   }
 
+  updateWater(t);
+  for (const f of flies){
+    const u = f.userData;
+    u.a += dt*u.sp;
+    const fx = u.cx + Math.cos(u.a)*u.r, fz = u.cz + Math.sin(u.a)*u.r;
+    f.position.set(fx, terrainH(fx,fz) + u.h + Math.sin(t*2 + u.ph)*0.5, fz);
+    f.material.opacity = 0.3 + (Math.sin(t*3 + u.ph)*0.5+0.5)*0.6;
+  }
+  for (const m of mists){
+    m.position.x += dt*m.userData.sp;
+    m.rotation.z += dt*m.userData.rot;
+    if (m.position.x > WORLD) m.position.x = -WORLD;
+  }
+  updateTeam(dt, t);
+
   water.material.opacity = 0.68 + Math.sin(t*1.5)*0.06;
   water.position.y = -0.55 + Math.sin(t*0.8)*0.06;
 
@@ -744,9 +1123,10 @@ requestAnimationFrame(loop);
 camera.position.set(0, terrainH(0,180) + EYE, 180);
 camera.rotation.y = 0;
 
-window.__game = {player, gems, idol, terrainH, tryPickup, state: () => ({
+window.__game = {player, gems, idol, terrainH, tryPickup, team, state: () => ({
   score: player.score, hasIdol: player.hasIdol, idolScored: player.idolScored,
   gemsTaken: gems.filter(g=>g.taken).length, paused,
+  comrades: team.map(m => ({name:m.name, state:m.state})),
   winVisible: winOverlay.style.display === 'flex',
   pos: {x: player.pos.x.toFixed(1), y: player.pos.y.toFixed(1), z: player.pos.z.toFixed(1)}
 })};

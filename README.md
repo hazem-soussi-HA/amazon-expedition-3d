@@ -52,12 +52,14 @@ Requires: any modern browser with WebGL, plus `three.min.js` (vendored, r128) if
 
 ## What's in the box
 
+- **You are a person in the jungle** — first-person safari sleeves, forearms, hands and a machete, all parented to the camera
+- **A team of three explorers** — MARCO, ELENA and KAI each run their own patch of the jungle: they wander, stop to admire the canopy, wave when they see you, and the scout comes over to check on you if you wander too far
 - **Procedural 3D jungle** — an analytic heightfield for hills, a great river that must be crossed, and ancient ruins at the south end
-- **Wildlife** — circling birds, drifting butterflies, hopping monkeys, all on closed-form paths
+- **Living atmosphere** — drifting ground mist, fireflies around the temple, distant ridges, a canopy overhead dappling the light, a breathing river
 - **Survival economy** — sprinting and wading drain energy; resting restores it
 - **A full quest loop** — temple → Golden Idol → return it to the boat, plus 10 hidden gems, score and a win state
-- **Canvas-2D minimap, HUD design, procedural Web Audio SFX**, SVG logo and identity system
-- **One file.** 747 lines of shippable code, plus one vendored runtime.
+- **Canvas-2D minimap with teammate dots**, HUD design, procedural Web Audio SFX, SVG logo and identity system
+- **One file.** 1127 lines of shippable code, plus one vendored runtime.
 
 ---
 
@@ -69,19 +71,28 @@ Everything lives in [`amazon_3d.html`](amazon_3d.html), in reading order:
 | --- | --- | --- |
 | 95 | setup | renderer, PCF soft shadows, fog, camera, lights |
 | 127 | terrain | `terrainH(x, z)` — the analytic heightfield, river, water plane |
-| 167 | vegetation & rocks | tree / rock / grass placement, `inRiver`, `nearRuins`, `nearStart` |
-| 247 | ruins & idol | temple geometry and the Golden Idol pedestal |
-| 296 | expedition boat | the finish point and win state |
-| 323 | gems | the ten collectibles and their placement |
-| 346 | wildlife | birds, butterflies, monkeys — parametric, no animation clips |
-| 397 | player & controls | pointer lock, mouse look, key state, jump |
-| 461 | pickups | `nearestGem`, `tryPickup`, interaction hints |
-| 495 | audio | `sfx()` — procedural Web Audio, no sample files |
-| 510 | HUD & minimap | score, energy bar, `drawMinimap()` on Canvas 2D |
-| 571 | physics & update | `collide()` push-out, delta-time movement, energy economy |
-| 725 | main loop | fixed-loop `requestAnimationFrame` with a frame-time clamp |
+| 196 | vegetation & rocks | tree / rock / grass placement, collision list, minimap data |
+| 276 | atmosphere | procedural mist, fireflies, distant ridges, canopy overhead |
+| 357 | ruins & idol | temple geometry, pedestal, Golden Idol, its glow light |
+| 406 | expedition boat | the finish point and win state |
+| 433 | gems | the ten collectibles |
+| 456 | wildlife | birds, butterflies, monkeys — parametric, no animation clips |
+| 507 | the expedition team | three AI teammates: rig builder, state machine, walk/wave/admire poses |
+| 690 | player & controls | pointer lock, mouse look, key state, jump |
+| 754 | first-person gear | sleeves, forearms, hands, machete — a child of the camera |
+| 806 | pickups | `nearestGem`, `tryPickup`, interaction hints |
+| 842 | audio | `sfx()` — procedural Web Audio, no sample files |
+| 857 | HUD & minimap | score, energy bar, `drawMinimap()` on Canvas 2D |
+| 925 | physics & update | `collide()` push-out, delta-time movement, energy economy, all animation |
+| 1104 | main loop | fixed-loop `requestAnimationFrame` with a frame-time clamp |
 
 [`showcase.html`](showcase.html) is the project dossier: the full design, identity and technical write-up, self-contained like the game.
+
+---
+
+## The teammate AI, in one paragraph
+
+Each teammate is a group of primitives with no rig and no animation clips, driven by a tiny state machine — `explore` → `admire` → `explore`, plus `greet` and `follow`. The walk is four sine waves (thighs, shins, arms, torso bob); the wave is a raised arm oscillating in time; the "delighted hop" is a single sine envelope. Eight lines of maths replace a whole animation system. That is the whole point of the project: **closed-form, deterministic, readable code**.
 
 ---
 
@@ -109,11 +120,12 @@ What made it work:
 
 Good first changes, each in one section of the code map:
 
-1. **Denser canopy** — raise the tree count in *vegetation & rocks* and watch the frame budget.
-2. **A sixth animal** — add a "firefly" alongside the wildlife using the same closed-form pattern.
-3. **A harder river** — make wading drain energy faster, so crossing becomes a real decision.
-4. **A second gem type** — gold gems worth 5, in the ruins only.
-5. **Night mode** — drive the directional light and sky colour from a time variable in *setup*.
+1. **A fourth teammate** — add a name to `TEAM_NAMES` and an entry to `TEAM_ANCHORS` in *the expedition team*.
+2. **A denser canopy** — raise the tree count in *vegetation & rocks* and watch the frame budget.
+3. **A sixth animal** — add a "firefly swarm" alongside the wildlife using the same closed-form pattern.
+4. **A harder river** — make wading drain energy faster, so crossing becomes a real decision.
+5. **Night mode** — drive the directional light and sky colour from a time variable in *setup*, and let the temple fireflies take over as the main light source.
+6. **Give the team a job** — make ELENA wait at the boat until you bring the idol back.
 
 ---
 
