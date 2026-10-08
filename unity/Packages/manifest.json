@@ -1,0 +1,12 @@
+{
+  "name": "com.amazon.expedition",
+  "version": "1.0.0",
+  "displayName": "Amazon Expedition 3D",
+  "description": "Amazon Expedition 3D - deep physics and realism overhaul. Unity C# port of the browser prototype.",
+  "unity": "2021.3",
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "12.1.8",
+    "com.unity.timeline": "1.6.4",
+    "com.unity.inputsystem": "1.5.1"
+  }
+}

@@ -90,6 +90,15 @@ Everything lives in [`amazon_3d.html`](amazon_3d.html), in reading order:
 
 ---
 
+## Two builds, one expedition
+
+The prototype runs in the browser and is playable today. The same world is being
+rebuilt in Unity/C# with a proper character controller, foot IK, surfaces and a
+real teammate AI — see [`unity/`](unity/README.md) for the C# code and the
+JS → C# migration map.
+
+---
+
 ## The teammate AI, in one paragraph
 
 Each teammate is a group of primitives with no rig and no animation clips, driven by a tiny state machine — `explore` → `admire` → `explore`, plus `greet` and `follow`. The walk is four sine waves (thighs, shins, arms, torso bob); the wave is a raised arm oscillating in time; the "delighted hop" is a single sine envelope. Eight lines of maths replace a whole animation system. That is the whole point of the project: **closed-form, deterministic, readable code**.
