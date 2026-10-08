@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amazon Expedition 3D — Project Dossier | Hazem Soussi</title>
+<meta name="description" content="Amazon Expedition 3D: a procedurally generated first-person jungle adventure built with WebGL and Three.js. Design, engineering and identity dossier.">
+<meta name="author" content="Hazem Soussi">
+<meta property="og:title" content="Amazon Expedition 3D — Project Dossier">
+<meta property="og:description" content="A living rainforest in your browser. Procedural terrain, wildlife, quest loop and a complete brand system — designed and engineered with AI-assisted tooling.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23081410'/%3E%3Cpath d='M16 5 L26 27 H6 Z' fill='%237dffa0'/%3E%3Crect x='10' y='20' width='12' height='3' rx='1.5' fill='%2335f0ff'/%3E%3C/svg%3E">
+<style>
+:root{
+  --ink:#e9f7ec;
+  --ink-2:#b6d3bf;
+  --ink-3:#7d9a86;
+  --bg:#040a07;
+  --bg-2:#071210;
+  --panel:rgba(255,255,255,.035);
+  --panel-2:rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.09);
+  --line-2:rgba(125,255,160,.22);
+  --emerald:#2ecc71;
+  --mint:#7dffa0;
+  --gold:#ffd54a;
+  --amber:#f1c40f;
+  --gem:#35f0ff;
+  --shadow:0 30px 80px -30px rgba(0,0,0,.9);
+  --r-s:10px;
+  --r-m:18px;
+  --r-l:28px;
+  --maxw:1180px;
+  --sans:"Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono","SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:88px;-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:17px;line-height:1.65;letter-spacing:.005em;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(900px 600px at 12% -5%,rgba(46,204,113,.16),transparent 60%),
+    radial-gradient(700px 500px at 92% 8%,rgba(53,240,255,.09),transparent 60%),
+    radial-gradient(1000px 700px at 50% 108%,rgba(255,213,74,.07),transparent 60%);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.2;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  mix-blend-mode:overlay;
+}
+main,header,footer{position:relative;z-index:2}
+::selection{background:var(--mint);color:#04140a}
+a{color:inherit;text-decoration:none}
+img,svg{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:6px}
+
+.skip{position:absolute;left:-9999px;top:0;background:var(--mint);color:#04140a;padding:10px 18px;z-index:200;border-radius:0 0 10px 0}
+.skip:focus{left:0}
+
+/* ---------- shell ---------- */
+.wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 28px}
+section{padding:clamp(72px,10vw,132px) 0;position:relative}
+section + section{border-top:1px solid rgba(255,255,255,.055)}
+
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;font-size:11px;font-weight:700;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--mint);
+  padding:7px 14px;border:1px solid var(--line-2);border-radius:100px;
+  background:rgba(46,204,113,.07);margin-bottom:26px;
+}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+
+h1,h2,h3,h4{font-family:var(--display);font-weight:400;line-height:1.06;letter-spacing:-.015em}
+h2{font-size:clamp(34px,5.2vw,60px);margin-bottom:20px;max-width:19ch}
+h3{font-size:clamp(20px,2.4vw,27px);letter-spacing:-.01em}
+.lede{font-size:clamp(17px,2vw,20px);color:var(--ink-2);max-width:62ch;line-height:1.72}
+.muted{color:var(--ink-3)}
+.grad{background:linear-gradient(105deg,var(--mint) 0%,#9df3c4 38%,var(--gold) 78%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hd{max-width:74ch;margin-bottom:56px}
+.hd h2 + .lede{margin-top:6px}
+.rule{width:64px;height:2px;background:linear-gradient(90deg,var(--emerald),transparent);margin:28px 0}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap;
+  padding:14px 26px;border-radius:100px;font-size:15px;font-weight:600;letter-spacing:.02em;
+  border:1px solid transparent;cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,background .3s,color .3s,border-color .3s;
+  font-family:inherit;
+}
+.btn svg{width:17px;height:17px;flex:none}
+.btn-p{background:linear-gradient(120deg,var(--emerald),var(--mint));color:#03230f;box-shadow:0 14px 34px -12px rgba(46,204,113,.75)}
+.btn-p:hover{transform:translateY(-3px);box-shadow:0 22px 46px -14px rgba(46,204,113,.9)}
+.btn-g{background:rgba(255,255,255,.04);border-color:var(--line);color:var(--ink);backdrop-filter:blur(8px)}
+.btn-g:hover{transform:translateY(-3px);border-color:var(--line-2);background:rgba(125,255,160,.08)}
+.btn:active{transform:translateY(0) scale(.985)}
+.btn-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+
+/* ---------- nav ---------- */
+.progress{position:fixed;top:0;left:0;height:2px;width:100%;z-index:120;background:transparent}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--emerald),var(--gem),var(--gold));box-shadow:0 0 12px rgba(125,255,160,.7)}
+nav{position:fixed;top:0;left:0;right:0;z-index:110;transition:background .4s,border-color .4s,backdrop-filter .4s;border-bottom:1px solid transparent}
+nav.stuck{background:rgba(4,10,7,.93);backdrop-filter:blur(18px) saturate(140%);border-bottom-color:var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;gap:20px;height:74px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .tx b{display:block;font-family:var(--display);font-size:14px;letter-spacing:.14em;line-height:1.15;white-space:nowrap}
+.brand .tx span{display:block;font-size:9.5px;letter-spacing:.34em;color:var(--ink-3);margin-top:3px}
+.links{display:flex;gap:4px;align-items:center}
+.links a{
+  font-size:12.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+  padding:9px 13px;border-radius:8px;transition:color .25s,background .25s;position:relative;
+}
+.links a:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.links a.on{color:var(--mint)}
+.links a.on::after{content:"";position:absolute;left:13px;right:13px;bottom:4px;height:1px;background:var(--mint);box-shadow:0 0 8px var(--mint)}
+nav .btn{padding:10px 20px;font-size:13.5px}
+.burger{display:none;width:44px;height:44px;border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:12px;cursor:pointer;position:relative}
+.burger i{position:absolute;left:12px;right:12px;height:1.6px;background:var(--ink);transition:.3s}
+.burger i:nth-child(1){top:17px}.burger i:nth-child(2){top:22px}.burger i:nth-child(3){top:27px}
+.burger.x i:nth-child(1){top:22px;transform:rotate(45deg)}
+.burger.x i:nth-child(2){opacity:0}
+.burger.x i:nth-child(3){top:22px;transform:rotate(-45deg)}
+
+/* ---------- hero ---------- */
+.hero{padding-top:clamp(112px,14vh,158px);padding-bottom:clamp(132px,18vh,186px);min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.06fr .94fr;gap:clamp(32px,5vw,72px);align-items:center;width:100%}
+.hero h1{font-size:clamp(42px,7.4vw,94px);line-height:.95;letter-spacing:-.035em;margin:24px 0 20px}
+.hero h1 .l{display:block;overflow:hidden}
+.hero h1 .l i{display:block;font-style:normal;transform:translateY(102%);animation:rise 1.05s cubic-bezier(.16,1,.3,1) forwards}
+.hero h1 .l:nth-child(2) i{animation-delay:.1s}
+.hero h1 .l:nth-child(3) i{animation-delay:.2s}
+@keyframes rise{to{transform:translateY(0)}}
+.hero-sub{font-size:clamp(15.5px,1.6vw,18px);color:var(--ink-2);max-width:50ch;margin-bottom:28px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.chip{
+  font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:100px;padding:7px 13px;background:var(--panel);
+  display:inline-flex;align-items:center;gap:7px;
+}
+.chip b{color:var(--mint);font-weight:600}
+.chip.g b{color:var(--gold)}
+
+.hero-stage{position:relative;display:grid;place-items:center;min-height:min(74vh,600px);perspective:1400px}
+.stage-glow{position:absolute;width:112%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(46,204,113,.3),rgba(53,240,255,.08) 45%,transparent 70%);filter:blur(30px);animation:breathe 7s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.12);opacity:1}}
+.plate{width:min(100%,440px);transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.8,.2,1);will-change:transform}
+.plate .shadow{position:absolute;left:12%;right:12%;bottom:-6%;height:44px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,.72),transparent 70%);filter:blur(12px)}
+.mark{width:100%;height:auto;filter:drop-shadow(0 34px 60px rgba(0,0,0,.65))}
+
+.horizon{position:absolute;left:0;right:0;bottom:0;height:min(24vh,190px);pointer-events:none;overflow:hidden}
+.horizon svg{position:absolute;bottom:0;left:0;width:100%;height:100%}
+.par{transition:transform .8s cubic-bezier(.2,.8,.2,1);will-change:transform}
+
+.scroll-cue{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;font-size:9.5px;letter-spacing:.34em;color:var(--ink-2);text-transform:uppercase;background:rgba(3,9,6,.78);border:1px solid rgba(125,255,160,.24);border-radius:100px;padding:9px 18px 11px;backdrop-filter:blur(6px)}
+.scroll-cue .ln{width:1px;height:26px;background:linear-gradient(180deg,var(--mint),transparent);position:relative;overflow:hidden}
+.scroll-cue .ln::after{content:"";position:absolute;inset:0;background:var(--mint);animation:drop 2.1s infinite}
+@keyframes drop{0%{transform:translateY(-100%)}60%,100%{transform:translateY(100%)}}
+
+/* ---------- panels ---------- */
+.card{
+  background:linear-gradient(170deg,var(--panel-2),var(--panel));
+  border:1px solid var(--line);border-radius:var(--r-m);padding:30px;
+  position:relative;overflow:hidden;backdrop-filter:blur(10px);
+  transition:border-color .4s,transform .4s,box-shadow .4s;
+}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(420px 240px at var(--mx,50%) var(--my,0%),rgba(125,255,160,.1),transparent 70%);opacity:0;transition:opacity .4s;pointer-events:none}
+.card:hover::after{opacity:1}
+.card:hover{border-color:var(--line-2);box-shadow:var(--shadow)}
+.grid{display:grid;gap:20px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden}
+.stat{background:rgba(6,14,10,.86);padding:30px 26px;position:relative;transition:background .4s}
+.stat:hover{background:rgba(12,26,18,.94)}
+.stat .n{font-family:var(--display);font-size:clamp(32px,4vw,48px);line-height:1;letter-spacing:-.02em}
+.stat .l{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);margin-top:12px}
+.stat .s{font-size:12.5px;color:var(--ink-3);margin-top:8px;line-height:1.5}
+.stat.g .n{color:var(--gold)}
+.stat.b .n{color:var(--gem)}
+.stat.e .n{color:var(--mint)}
+
+/* ---------- logo suite ---------- */
+.brands{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.brandcard{background:rgba(6,14,10,.8);border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;display:flex;flex-direction:column;transition:border-color .4s,transform .4s}
+.brandcard:hover{border-color:var(--line-2);transform:translateY(-4px)}
+.brandcard .stagebox{display:grid;place-items:center;padding:34px 22px;min-height:190px;flex:1;position:relative;overflow:hidden}
+.brandcard .stagebox.light{background:linear-gradient(160deg,#f2f7f3,#dfeae2);color:#08130c}
+.brandcard .stagebox.grid-bg::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(125,255,160,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(125,255,160,.08) 1px,transparent 1px);background-size:22px 22px;mask-image:radial-gradient(circle at 50% 50%,#000,transparent 78%)}
+.brandcard .stagebox > *{position:relative}
+.brandcard .cap{border-top:1px solid var(--line);padding:14px 18px;font-size:12px;color:var(--ink-3);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.brandcard .cap b{color:var(--ink);font-weight:600;letter-spacing:.06em}
+.swatches{display:flex;gap:0;margin-top:14px}
+.swatches i{width:26px;height:12px}
+.sizes{display:flex;align-items:flex-end;gap:26px;justify-content:center;padding:8px 0}
+.sizes figure{margin:0;text-align:center}
+.sizes figcaption{font-size:9.5px;letter-spacing:.18em;color:var(--ink-3);margin-top:9px;text-transform:uppercase}
+
+/* ---------- signature ---------- */
+.sig-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:24px;align-items:stretch}
+.sigcard{
+  background:linear-gradient(155deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+  border:1px solid var(--line);border-radius:var(--r-l);padding:clamp(28px,4vw,46px);
+  position:relative;overflow:hidden;
+}
+.sigcard::before{
+  content:"";position:absolute;inset:14px;border:1px solid rgba(125,255,160,.12);border-radius:calc(var(--r-l) - 10px);pointer-events:none;
+}
+.sig-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+.sig-head .ttl{font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-3)}
+.penwrap{position:relative;background:rgba(3,9,6,.5);border:1px solid var(--line);border-radius:var(--r-m);padding:8px 6px 2px;overflow:hidden}
+.penwrap::after{content:"";position:absolute;left:0;right:0;bottom:64px;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+.sig-svg{width:100%;height:auto;display:block}
+.sig-line{stroke-dasharray:1;stroke-dashoffset:1}
+.draw .sig-line{animation:draw 2.6s cubic-bezier(.55,0,.25,1) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.sigmeta{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px}
+.sigmeta div{border-left:1px solid var(--line);padding-left:14px}
+.sigmeta dt{font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px}
+.sigmeta dd{font-size:14px;color:var(--ink)}
+.signame{font-family:var(--display);font-size:clamp(22px,3.2vw,30px);letter-spacing:.01em;margin-top:6px}
+
+.seal{position:relative;display:grid;place-items:center;padding:14px 0}
+.seal svg{width:min(100%,290px)}
+.seal .spin{transform-origin:100px 100px;animation:sealspin 26s linear infinite}
+@keyframes sealspin{to{transform:rotate(360deg)}}
+.aisign{display:flex;gap:18px;align-items:center;margin-top:24px;padding:20px;border:1px dashed rgba(53,240,255,.3);border-radius:var(--r-m);background:rgba(53,240,255,.04)}
+.aisign .mk{flex:none;width:62px;height:62px}
+.aisign p{font-size:13.5px;color:var(--ink-2);line-height:1.6}
+.aisign b{color:var(--gem);letter-spacing:.04em}
+
+/* ---------- features ---------- */
+.fcard{padding:30px 28px;transform-style:preserve-3d;will-change:transform}
+.fcard .ic{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(150deg,rgba(125,255,160,.18),rgba(125,255,160,.04));border:1px solid var(--line-2);margin-bottom:20px;color:var(--mint)}
+.fcard .ic svg{width:24px;height:24px}
+.fcard h3{margin-bottom:10px}
+.fcard p{color:var(--ink-3);font-size:14.5px;line-height:1.66}
+.fcard .no{position:absolute;right:22px;top:18px;font-family:var(--display);font-size:44px;color:rgba(255,255,255,.05);line-height:1}
+
+/* ---------- 3d stack ---------- */
+.stackwrap{display:grid;grid-template-columns:.92fr 1.08fr;gap:clamp(28px,5vw,60px);align-items:center}
+.scene{perspective:1600px;height:560px;display:grid;place-items:center;position:relative}
+.scene-in{transform-style:preserve-3d;width:min(90%,340px);height:150px;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.plate3d{
+  position:absolute;inset:0;border:1px solid var(--line-2);border-radius:18px;
+  background:linear-gradient(150deg,rgba(46,204,113,.14),rgba(4,10,7,.9));
+  backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:space-between;padding:14px 17px 15px;
+  box-shadow:0 26px 54px -28px rgba(0,0,0,.95);
+}
+.plate3d .nm{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
+.plate3d .bar{position:absolute;left:17px;right:17px;top:16px;height:1px;background:linear-gradient(90deg,rgba(125,255,160,.28),transparent)}
+.plate3d .dot{position:absolute;left:17px;top:34px;width:6px;height:6px;border-radius:50%;background:rgba(125,255,160,.45);box-shadow:16px 0 0 rgba(125,255,160,.22),32px 0 0 rgba(125,255,160,.14)}
+.plate3d .vl{font-family:var(--mono);font-size:11px;color:var(--mint)}
+.plate3d i{position:absolute;left:50%;bottom:-8px;width:18px;height:18px;transform:translateX(-50%) rotateX(-70deg);background:linear-gradient(120deg,rgba(125,255,160,.5),rgba(4,10,7,.9));border:1px solid var(--line-2);border-top:none;border-radius:2px}
+.layer-list{display:grid;gap:14px}
+.layer-list li{list-style:none;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start;padding:18px 20px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel);transition:border-color .35s,transform .35s,background .35s}
+.layer-list li:hover{border-color:var(--line-2);transform:translateX(6px);background:rgba(125,255,160,.05)}
+.layer-list .ix{font-family:var(--mono);font-size:11px;color:var(--mint);padding-top:3px}
+.layer-list b{display:block;font-size:15.5px;font-weight:600;margin-bottom:5px}
+.layer-list span{font-size:13.5px;color:var(--ink-3);line-height:1.6}
+.layer-list em{font-family:var(--mono);font-size:11px;color:var(--ink-3);font-style:normal;padding-top:3px;white-space:nowrap}
+
+/* ---------- systems tabs ---------- */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}
+.tabs button{
+  font-family:inherit;font-size:12.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);
+  background:var(--panel);border:1px solid var(--line);padding:11px 17px;border-radius:100px;cursor:pointer;
+  transition:color .3s,border-color .3s,background .3s,transform .3s;
+}
+.tabs button:hover{color:var(--ink);transform:translateY(-2px)}
+.tabs button[aria-selected="true"]{color:#03230f;background:linear-gradient(120deg,var(--emerald),var(--mint));border-color:transparent;font-weight:600}
+.panelbox{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;background:rgba(6,14,10,.8)}
+.panelbox .txt{padding:clamp(26px,3.4vw,40px)}
+.panelbox .txt h3{margin-bottom:16px}
+.panelbox .txt ul{list-style:none;display:grid;gap:13px}
+.panelbox .txt li{font-size:14.5px;color:var(--ink-2);padding-left:24px;position:relative;line-height:1.62}
+.panelbox .txt li::before{content:"";position:absolute;left:0;top:8px;width:9px;height:9px;border:1.5px solid var(--mint);border-radius:2px;transform:rotate(45deg)}
+.panelbox .txt li b{color:var(--ink)}
+pre{margin:0;background:linear-gradient(160deg,#08150f,#040a07);padding:clamp(22px,3vw,32px);overflow:auto;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:12px;line-height:1.9;color:#cfe8d6;border-left:1px solid var(--line);counter-reset:l}
+pre .c{color:#5d8a6e}
+pre .k{color:#7dffa0}
+pre .n{color:#ffd54a}
+pre .f{color:#35f0ff}
+pre .s{color:#e9a6ff}
+pre .p{color:#7d9a86}
+[hidden]{display:none !important}
+
+/* ---------- loop ---------- */
+.loop{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:stretch}
+.step{position:relative;padding:26px 20px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--panel);transition:transform .4s,border-color .4s,background .4s}
+.step:hover{transform:translateY(-6px);border-color:var(--line-2);background:rgba(125,255,160,.06)}
+.step .k{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:.2em}
+.step h4{font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:0;margin:12px 0 8px}
+.step p{font-size:13px;color:var(--ink-3);line-height:1.6}
+.step:not(:last-child)::after{content:"\2192";position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:14px;z-index:2}
+
+/* ---------- skills ---------- */
+.skills{display:flex;flex-wrap:wrap;gap:10px}
+.skill{
+  display:inline-flex;align-items:center;gap:9px;padding:11px 16px;border-radius:12px;
+  border:1px solid var(--line);background:var(--panel);font-size:13.5px;color:var(--ink-2);
+  transition:transform .3s,border-color .3s,color .3s,background .3s;
+}
+.skill:hover{transform:translateY(-3px);border-color:var(--line-2);color:var(--ink);background:rgba(125,255,160,.06)}
+.skill i{width:6px;height:6px;border-radius:2px;background:var(--mint);transform:rotate(45deg);flex:none}
+.skill.a i{background:var(--gold)}
+.skill.b i{background:var(--gem)}
+
+/* ---------- roadmap ---------- */
+.road{position:relative;display:grid;gap:18px;padding-left:34px}
+.road::before{content:"";position:absolute;left:8px;top:8px;bottom:8px;width:1px;background:linear-gradient(180deg,var(--emerald),rgba(125,255,160,.05))}
+.road article{position:relative;padding:24px 26px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--panel);transition:border-color .4s,transform .4s}
+.road article:hover{border-color:var(--line-2);transform:translateX(6px)}
+.road article::before{content:"";position:absolute;left:-33px;top:32px;width:11px;height:11px;border-radius:50%;background:var(--bg-2);border:2px solid var(--emerald);box-shadow:0 0 0 4px rgba(46,204,113,.12)}
+.road article[data-s="next"]::before{border-color:var(--gold);box-shadow:0 0 0 4px rgba(255,213,74,.12)}
+.road article[data-s="idea"]::before{border-color:var(--gem);box-shadow:0 0 0 4px rgba(53,240,255,.12)}
+.road h4{font-family:var(--sans);font-size:17px;font-weight:600;letter-spacing:0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tag{font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:4px 9px;border-radius:100px;border:1px solid var(--line-2);color:var(--mint)}
+.tag.g{border-color:rgba(255,213,74,.35);color:var(--gold)}
+.tag.b{border-color:rgba(53,240,255,.35);color:var(--gem)}
+.road p{color:var(--ink-3);font-size:14.5px;margin-top:8px}
+
+/* ---------- signoff ---------- */
+.signoff{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.sobox{border:1px solid var(--line);border-radius:var(--r-l);padding:clamp(28px,3.6vw,42px);background:linear-gradient(160deg,var(--panel-2),transparent)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:12px 24px;font-size:14px;margin-top:24px}
+.dl dt{color:var(--ink-3);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;padding-top:2px}
+.dl dd{color:var(--ink-2)}
+.mono-box{font-family:var(--mono);font-size:12px;line-height:2;color:var(--ink-3);background:rgba(3,9,6,.6);border:1px solid var(--line);border-radius:var(--r-s);padding:20px 22px;margin-top:22px;overflow-x:auto}
+.mono-box b{color:var(--mint);font-weight:400}
+.mono-box .g{color:var(--gold)}
+.mono-box .c{color:var(--gem)}
+
+/* ---------- footer ---------- */
+footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:22px;flex-wrap:wrap}
+.foot p{font-size:13px;color:var(--ink-3)}
+.foot .r{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.totop{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);transition:color .3s}
+.totop:hover{color:var(--mint)}
+.totop svg{width:14px;height:14px}
+
+/* ---------- reveal ---------- */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .85s cubic-bezier(.16,1,.3,1),transform .85s cubic-bezier(.16,1,.3,1);transition-delay:calc(var(--i,0) * 80ms)}
+.rv.in{opacity:1;transform:none}
+
+/* ---------- responsive ---------- */
+@media (max-width:1020px){
+  .hero-grid,.sig-grid,.stackwrap,.panelbox,.signoff{grid-template-columns:1fr}
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .brands{grid-template-columns:repeat(2,1fr)}
+  .loop{grid-template-columns:1fr}
+  .step:not(:last-child)::after{content:"\2193";right:auto;left:50%;top:auto;bottom:-16px;transform:translateX(-50%)}
+  .scene{height:400px}
+  .links{display:none}
+  .links.open{display:flex;position:absolute;top:74px;left:16px;right:16px;flex-direction:column;align-items:stretch;background:rgba(5,12,8,.96);backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:var(--r-m);padding:12px}
+  .links.open a{padding:13px 14px;font-size:13px}
+  .burger{display:block}
+  nav .btn{display:none}
+}
+@media (max-width:720px){
+  body{font-size:16px}
+  .meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .chip{justify-content:center;text-align:center;padding:8px 10px}
+  .horizon #lay-near{width:210%;left:-55%}
+  .wrap{padding:0 20px}
+  .g2,.g3,.g4,.brands{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .stat{padding:22px 18px}
+  .sigmeta{grid-template-columns:1fr}
+  .scene{height:320px}
+  .hero h1{font-size:clamp(38px,11vw,60px)}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<noscript><style>.sig-line{stroke-dasharray:none !important;stroke-dashoffset:0 !important}.rv{opacity:1 !important;transform:none !important}</style></noscript>
+<a class="skip" href="#main">Skip to content</a>
+<div class="progress"><i id="bar"></i></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <linearGradient id="gMint" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b6ffd0"/><stop offset=".55" stop-color="#2ecc71"/><stop offset="1" stop-color="#12693c"/></linearGradient>
+  <linearGradient id="gMintH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7dffa0"/><stop offset="1" stop-color="#1a6b3a"/></linearGradient>
+  <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0b0"/><stop offset="1" stop-color="#d99a05"/></linearGradient>
+  <linearGradient id="gGem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b6f8ff"/><stop offset="1" stop-color="#0e8fa8"/></linearGradient>
+  <radialGradient id="gDisc" cx=".38" cy=".3" r=".85"><stop offset="0" stop-color="#12452a"/><stop offset="1" stop-color="#050f0a"/></radialGradient>
+  <path id="arcTop" d="M 24 104 A 76 76 0 0 1 176 104" fill="none"/>
+  <path id="arcBot" d="M 26 104 A 74 74 0 0 0 174 104" fill="none"/>
+  <path id="arcSeal" d="M 100 100 m -74 0 a 74 74 0 1 1 148 0 a 74 74 0 1 1 -148 0" fill="none"/>
+  <path id="sigPath" pathLength="1" d="M26.0 142.0 C27.3 138.1 32.6 121.4 36.0 112.0 C39.4 102.6 47.6 80.1 52.0 70.0 C56.4 59.9 66.4 37.9 70.0 34.0 C73.6 30.1 79.5 34.5 80.0 40.0 C80.5 45.5 76.6 66.6 74.0 76.0 C71.4 85.4 62.3 105.5 60.0 112.0 C57.7 118.5 54.4 125.0 56.0 126.0 C57.6 127.0 66.8 125.7 72.0 120.0 C77.2 114.3 90.0 92.7 96.0 82.0 C102.0 71.3 113.8 42.9 118.0 38.0 C122.2 33.1 127.7 37.5 128.0 44.0 C128.3 50.5 122.9 77.6 120.0 88.0 C117.1 98.4 107.3 118.9 106.0 124.0 C104.7 129.1 108.2 128.6 110.0 127.0 C111.8 125.4 117.7 115.5 120.0 112.0 C122.3 108.5 125.9 101.0 128.0 100.0 C130.1 99.0 135.7 101.7 136.0 104.0 C136.3 106.3 131.8 115.1 130.0 118.0 C128.2 120.9 120.7 125.2 122.0 126.0 C123.3 126.8 136.4 127.2 140.0 124.0 C143.6 120.8 147.7 103.9 150.0 101.0 C152.3 98.1 157.5 100.3 158.0 102.0 C158.5 103.7 156.1 111.0 154.0 114.0 C151.9 117.0 141.0 124.2 142.0 125.0 C143.0 125.8 158.9 121.2 162.0 120.0 C165.1 118.8 164.2 118.2 166.0 116.0 C167.8 113.8 173.7 104.2 176.0 103.0 C178.3 101.8 184.0 105.4 184.0 107.0 C184.0 108.6 178.1 113.0 176.0 115.0 C173.9 117.0 166.7 120.6 168.0 122.0 C169.3 123.4 182.6 125.6 186.0 126.0 C189.4 126.4 192.3 128.4 194.0 125.0 C195.7 121.6 197.6 103.4 199.0 100.0 C200.4 96.6 204.0 96.0 205.0 99.0 C206.0 102.0 206.0 122.9 207.0 123.0 C208.0 123.1 211.4 103.1 213.0 100.0 C214.6 96.9 218.0 96.0 219.0 99.0 C220.0 102.0 220.0 122.9 221.0 123.0 C222.0 123.1 225.6 103.1 227.0 100.0 C228.4 96.9 231.1 96.0 232.0 99.0 C232.9 102.0 232.4 119.6 234.0 123.0 C235.6 126.4 237.2 135.8 244.0 125.0 C250.8 114.2 284.2 50.5 286.0 40.0 C287.8 29.5 263.2 40.1 258.0 44.0 C252.8 47.9 246.3 64.3 246.0 70.0 C245.7 75.7 252.1 84.6 256.0 88.0 C259.9 91.4 273.1 92.4 276.0 96.0 C278.9 99.6 280.3 112.0 278.0 116.0 C275.7 120.0 262.7 126.3 258.0 127.0 C253.3 127.7 243.0 123.2 242.0 121.0 C241.0 118.8 247.9 112.5 250.0 110.0 C252.1 107.5 255.9 102.3 258.0 102.0 C260.1 101.7 265.5 105.8 266.0 108.0 C266.5 110.2 264.1 116.8 262.0 119.0 C259.9 121.2 252.3 125.3 250.0 125.0 C247.7 124.7 241.7 119.9 244.0 117.0 C246.3 114.1 264.6 102.7 268.0 103.0 C271.4 103.3 268.6 116.0 270.0 119.0 C271.4 122.0 276.8 126.9 279.0 126.0 C281.2 125.1 285.7 115.2 287.0 112.0 C288.3 108.8 288.5 100.0 289.0 101.0 C289.5 102.0 289.6 116.8 291.0 120.0 C292.4 123.2 298.3 127.3 300.0 126.0 C301.7 124.7 302.3 113.0 304.0 110.0 C305.7 107.0 311.1 102.9 313.0 103.0 C314.9 103.1 319.3 108.9 319.0 111.0 C318.7 113.1 313.3 117.4 311.0 119.0 C308.7 120.6 300.5 122.0 301.0 123.0 C301.5 124.0 312.7 128.7 315.0 127.0 C317.3 125.3 317.3 113.1 319.0 110.0 C320.7 106.9 326.1 102.9 328.0 103.0 C329.9 103.1 334.3 108.9 334.0 111.0 C333.7 113.1 328.3 117.4 326.0 119.0 C323.7 120.6 315.5 122.0 316.0 123.0 C316.5 124.0 327.1 129.9 330.0 127.0 C332.9 124.1 336.7 101.5 338.0 101.0 C339.3 100.5 338.6 119.6 340.0 123.0 C341.4 126.4 346.8 127.7 349.0 127.0 C351.2 126.3 355.6 121.2 357.0 118.0 C358.4 114.8 359.4 101.6 360.0 102.0 C360.6 102.4 360.4 117.8 362.0 121.0 C363.6 124.2 368.9 127.0 372.0 127.0 C375.1 127.0 380.3 121.1 386.0 121.0 C391.7 120.9 407.7 123.5 416.0 126.0 C424.3 128.5 441.2 136.9 450.0 140.0 C458.8 143.1 475.9 149.7 484.0 150.0 C492.1 150.3 507.2 145.1 512.0 142.0 C516.8 138.9 520.9 129.4 521.0 126.0 C521.1 122.6 515.5 116.5 513.0 116.0 C510.5 115.5 502.6 119.7 502.0 122.0 C501.4 124.3 505.1 131.9 508.0 134.0 C510.9 136.1 521.9 137.5 524.0 138.0" fill="none"/>
+</defs></svg>
+
+<header>
+<nav id="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top" aria-label="Amazon Expedition 3D home">
+      <svg width="38" height="38" viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="94" fill="none" stroke="url(#gMint)" stroke-width="7"/>
+        <circle cx="100" cy="100" r="64" fill="url(#gDisc)" stroke="#2ecc71" stroke-width="2.5"/>
+        <path d="M100 54 L138 140 H62 Z" fill="none" stroke="url(#gMint)" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M76 122 H124" stroke="url(#gGem)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M100 30 l7 9 -7 9 -7 -9 z" fill="url(#gGold)"/>
+        <path d="M40 150 Q100 132 160 150" fill="none" stroke="#1a6b3a" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <span class="tx"><b>AMAZON EXPEDITION</b><span>3D · DOSSIER</span></span>
+    </a>
+    <div class="links" id="links">
+      <a href="#identity">Identity</a>
+      <a href="#signatures">Signatures</a>
+      <a href="#systems">Systems</a>
+      <a href="#dimension">Dimension</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#credits">Credits</a>
+    </div>
+    <a class="btn btn-p" href="amazon_3d.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Play the game</a>
+    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><i></i><i></i><i></i></button>
+  </div>
+</nav>
+</header>
+
+<main id="main">
+<div id="top"></div>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow rv"><span class="dot"></span>Project dossier · 2026</span>
+      <h1>
+        <span class="l"><i>Amazon</i></span>
+        <span class="l"><i class="grad">Expedition</i></span>
+        <span class="l"><i>Three<span style="font-size:.42em;vertical-align:super;letter-spacing:.06em;margin-left:.18em">D</span></i></span>
+      </h1>
+      <p class="hero-sub">A first-person jungle adventure that lives entirely inside one HTML file. No engine, no build step, no assets — terrain, wildlife, ruins and light are generated from a handful of lines of mathematics.</p>
+      <div class="btn-row">
+        <a class="btn btn-p" href="amazon_3d.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Enter the jungle</a>
+        <a class="btn btn-g" href="#identity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg>See the identity system</a>
+      </div>
+      <div class="meta">
+        <span class="chip">Engine <b>Three.js r128</b></span>
+        <span class="chip">Genre <b>First-person adventure</b></span>
+        <span class="chip g">Author <b>Hazem Soussi</b></span>
+        <span class="chip">Delivery <b>Single file</b></span>
+      </div>
+    </div>
+
+    <div class="hero-stage">
+      <div class="stage-glow"></div>
+      <div class="plate" id="plate">
+        <div class="shadow"></div>
+        <svg class="mark" viewBox="0 0 200 200" role="img" aria-label="Amazon Expedition 3D primary emblem">
+          <circle cx="100" cy="100" r="94" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1.5"/>
+          <circle cx="100" cy="100" r="94" fill="none" stroke="url(#gMint)" stroke-width="6"/>
+          <g class="spin-dash" style="transform-origin:100px 100px;animation:sealspin 40s linear infinite">
+            <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(255,213,74,.5)" stroke-width="2" stroke-dasharray="2 9" stroke-linecap="round"/>
+          </g>
+          <circle cx="100" cy="100" r="64" fill="url(#gDisc)" stroke="rgba(125,255,160,.35)" stroke-width="2"/>
+          <path d="M100 54 L138 140 H62 Z" fill="none" stroke="url(#gMint)" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M100 56 L130 122 H70 Z" fill="rgba(125,255,160,.1)"/>
+          <rect x="71" y="119" width="58" height="10" rx="5" fill="url(#gGem)"/>
+          <path d="M76 124 q12 5 24 0 t24 0" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M100 26 l8 10 -8 10 -8 -10 z" fill="url(#gGold)"/>
+          <path d="M100 26 l8 10 -8 10 -8 -10 z" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.2"/>
+          <path d="M38 152 Q100 132 162 152" fill="none" stroke="#1f8a4f" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+          <text font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="3.4" fill="#7dffa0">
+            <textPath href="#arcTop" startOffset="50%" text-anchor="middle">AMAZON EXPEDITION</textPath>
+          </text>
+          <text font-family="Inter,Segoe UI,Arial,sans-serif" font-size="9" font-weight="600" letter-spacing="2.6" fill="#ffd54a" opacity=".92">
+            <textPath href="#arcBot" startOffset="50%" text-anchor="middle">· FIRST-PERSON ADVENTURE ·</textPath>
+          </text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true"><span class="ln"></span>Scroll</div>
+  <div class="horizon" aria-hidden="true">
+    <svg class="par" id="lay-far" viewBox="0 0 1600 262" preserveAspectRatio="none"><path d="M0 262 L0 176 Q 200 118 420 174 T 900 176 T 1600 166 L1600 262Z" fill="#08291a" opacity=".8"/></svg>
+    <svg class="par" id="lay-mid" viewBox="0 0 1600 262" preserveAspectRatio="none"><path d="M0 262 L0 214 Q 260 158 520 210 T 1080 214 T 1600 204 L1600 262Z" fill="#051a10"/></svg>
+    <svg class="par" id="lay-near" viewBox="0 0 1600 262" preserveAspectRatio="none" stroke="none">
+    <g fill="#0a2e1d" opacity=".85"><path d="M67 260 L67.7 249.3 L68.1 238.7 L68.4 228 L68.4 217.3 L68.4 206.7 L68.1 196 L67.8 185.3 L67.2 174.7 L66.5 164 L65.7 153.3 L64.6 142.7 L63.5 132 L65.7 132 L67.1 142.7 L68.3 153.3 L69.4 164 L70.3 174.7 L71.1 185.3 L71.8 196 L72.3 206.7 L72.7 217.3 L72.9 228 L73 238.7 L73 249.3 L73 260 Z M63 128.3 L57.5 127.3 L52.5 127.1 L47.5 127.6 L42.4 128.8 L36.8 130.6 L30.9 133.2 L24.8 136.4 L18.8 140.2 L13.4 144.9 L13.7 145.2 L19.7 141.7 L26 138.7 L32.3 136.4 L38.2 134.7 L43.4 133.7 L48 133.3 L52.2 133.5 L56.4 134.3 L61 135.7 Z M64.2 129.4 L58.2 124.7 L52.8 120.9 L47.4 117.9 L41.5 116 L35.1 115 L28 115 L20.5 115.9 L13.3 117.8 L6.8 120.7 L7 121.2 L13.7 119.3 L20.9 118.3 L28 118.1 L34.6 118.8 L40.3 120.2 L45.3 122.5 L49.8 125.7 L54.5 129.7 L59.8 134.6 Z M64.9 130.7 L61.7 123.7 L59.1 117.3 L56.5 111.5 L53.4 106.4 L49.6 101.9 L45 98.2 L40.1 95.3 L35.2 93.2 L31 91.9 L30.8 92.3 L34.5 94.5 L38.8 97.2 L43.1 100.5 L46.9 104.3 L50 108.7 L52.3 113.8 L54.3 119.6 L56.4 126.1 L59.1 133.3 Z M65.6 132 L65.8 124.1 L66.6 117 L67.5 110.7 L67.9 105.2 L67.6 100.6 L66.5 96.9 L64.9 94.2 L63.3 92.6 L62.2 92 L61.8 92 L61.7 93.1 L62.4 94.9 L63.2 97.4 L63.6 100.8 L63.2 105.1 L62.1 110.3 L60.6 116.5 L59.2 123.7 L58.4 132 Z M64.6 133.2 L67.6 127.3 L71.2 122.1 L74.8 117.7 L78.1 114 L80.7 111.1 L82.7 109 L84.2 107.6 L85.9 106.9 L88.3 106.8 L88.5 106.4 L85.9 105.5 L83.6 105.6 L81.2 106.7 L78.6 108.6 L75.3 111.4 L71.5 114.9 L67.3 119.4 L63.1 124.6 L59.4 130.8 Z M64.2 134.6 L68.8 130.9 L74 127.8 L79.2 125.5 L84.2 123.8 L88.6 122.9 L92.5 122.6 L96.2 123.1 L100.1 124.3 L104.7 126.2 L105 125.8 L100.8 122.9 L96.9 120.8 L92.8 119.6 L88.3 119.1 L83.2 119.5 L77.5 120.7 L71.5 122.8 L65.4 125.7 L59.8 129.4 Z M63 135.6 L69.4 134 L76.5 133 L83.6 132.7 L90.5 133 L96.8 134.1 L102.6 135.8 L108.1 138.3 L113.8 141.4 L120.2 145.3 L120.5 144.8 L114.8 140 L109.4 136 L103.9 132.6 L97.9 130 L91.3 128.2 L83.9 127.1 L76.1 126.7 L68.4 127.1 L61 128.4 Z"/><path d="M327 260 L328.1 251.3 L329.2 242.7 L330.3 234 L331.6 225.3 L332.8 216.7 L334.1 208 L335.4 199.3 L336.6 190.7 L337.9 182 L339.1 173.3 L340.3 164.7 L341.5 156 L343.7 156 L342.7 164.7 L341.7 173.3 L340.8 182 L339.7 190.7 L338.7 199.3 L337.7 208 L336.7 216.7 L335.8 225.3 L334.9 234 L334 242.7 L333.4 251.3 L333 260 Z M340.8 153.1 L335.5 152.1 L330.5 151.8 L325.7 152.1 L320.7 153.1 L315.2 154.7 L309.4 157 L303.3 159.9 L297.3 163.4 L291.8 167.7 L292.2 168 L298.1 164.7 L304.2 161.8 L310.4 159.6 L316.2 158 L321.4 157 L326.1 156.6 L330.3 156.8 L334.5 157.5 L339.2 158.9 Z M342 153.6 L338.2 150.7 L334.6 148.2 L331.1 146.3 L327.2 144.9 L323 144.2 L318.4 144 L313.6 144.4 L309 145.4 L304.9 147 L305 147.4 L309.3 146.8 L313.8 146.6 L318.3 146.9 L322.4 147.6 L326 148.8 L329 150.4 L331.8 152.6 L334.7 155.2 L338 158.4 Z M342.7 154.7 L340.7 150.3 L338.9 146.3 L337.2 142.5 L335.1 139.2 L332.5 136.2 L329.5 133.8 L326.3 131.8 L323.1 130.3 L320.3 129.3 L320.1 129.8 L322.4 131.5 L325 133.5 L327.6 135.8 L329.9 138.4 L331.8 141.4 L333.2 144.7 L334.3 148.4 L335.6 152.6 L337.3 157.3 Z M343.7 156 L343.7 151.2 L344.1 146.7 L344.5 142.6 L344.6 138.9 L344.3 135.5 L343.4 132.7 L342.3 130.4 L341.1 128.6 L340.2 127.4 L339.8 127.4 L339.5 128.9 L339.7 130.8 L340.1 133.1 L340.1 135.7 L339.8 138.7 L339 142.2 L337.9 146.2 L336.9 150.8 L336.3 156 Z M342.7 157.3 L344.8 152.9 L347.4 148.8 L350 145.1 L352.4 141.7 L354.3 138.8 L355.8 136.2 L356.9 134.1 L358.1 132.3 L359.6 130.7 L359.4 130.3 L357.2 131.1 L355.4 132.6 L353.7 134.4 L351.7 136.7 L349.3 139.4 L346.4 142.5 L343.3 146.1 L340.1 150.2 L337.3 154.7 Z M341.8 158.1 L345.4 155.2 L349.4 152.7 L353.4 150.5 L357.3 148.7 L360.7 147.2 L363.7 146.1 L366.5 145.5 L369.4 145.1 L372.7 145.1 L372.8 144.6 L369.5 143.7 L366.4 143.4 L363.2 143.6 L359.8 144.2 L355.9 145.2 L351.6 146.7 L347.1 148.6 L342.5 151 L338.2 153.9 Z M341 159.5 L346.3 158.1 L352.2 157.2 L358.2 156.7 L363.9 156.8 L369.2 157.4 L374.1 158.4 L378.7 160.1 L383.5 162.2 L388.9 164.8 L389.1 164.4 L384.3 160.8 L379.8 157.8 L375.1 155.3 L370.1 153.4 L364.5 152.1 L358.3 151.3 L351.8 151.1 L345.2 151.5 L339 152.5 Z"/><path d="M582 260 L582.7 248.5 L582.9 237 L582.9 225.5 L582.8 214 L582.4 202.5 L581.8 191 L581.1 179.5 L580.1 168 L579 156.5 L577.7 145 L576.2 133.5 L574.5 122 L576.7 122 L578.6 133.5 L580.3 145 L581.9 156.5 L583.2 168 L584.4 179.5 L585.5 191 L586.3 202.5 L587 214 L587.5 225.5 L587.8 237 L587.9 248.5 L588 260 Z M573.8 118.9 L567 117.5 L560.7 116.8 L554.5 116.7 L547.9 117.3 L540.8 118.6 L533 120.4 L525 122.9 L517 126.1 L509.7 130 L510 130.4 L517.6 127.5 L525.7 125.1 L533.8 123.3 L541.4 122.2 L548.3 121.6 L554.4 121.6 L560.1 122.2 L565.9 123.4 L572.2 125.1 Z M575 119.7 L569.2 115 L563.9 110.9 L558.7 107.4 L553 104.5 L546.7 102.2 L539.7 100.5 L532.3 99.5 L525.1 99.1 L518.5 99.4 L518.5 99.9 L524.9 100.6 L532 101.6 L539 103.3 L545.5 105.4 L551.3 108.1 L556.3 111.3 L561 115.1 L565.7 119.4 L571 124.3 Z M576.3 120.5 L572.7 112.6 L569.8 105.4 L566.8 98.7 L563.4 92.7 L559.1 87.5 L554 83 L548.4 79.3 L542.9 76.4 L538.2 74.4 L537.9 74.8 L542 77.8 L546.8 81.3 L551.7 85.4 L555.9 90.1 L559.4 95.3 L562.1 101.3 L564.3 107.9 L566.6 115.3 L569.7 123.5 Z M576.5 122 L576.7 114.9 L577.4 108.4 L578.1 102.3 L578.5 96.7 L578.2 91.7 L577.1 87.4 L575.7 83.7 L574.3 80.7 L573.2 78.3 L572.8 78.3 L572.6 80.9 L573.2 84.1 L573.9 87.7 L574.2 91.8 L573.9 96.6 L572.9 101.9 L571.5 107.9 L570.2 114.6 L569.5 122 Z M576.1 123.4 L578.9 117.8 L582.3 112.7 L585.8 108.2 L588.9 104.4 L591.4 101.2 L593.2 98.7 L594.7 96.9 L596.2 95.7 L598.5 94.9 L598.5 94.4 L595.8 94.1 L593.5 94.8 L591.2 96.3 L588.7 98.5 L585.5 101.4 L581.7 105 L577.6 109.4 L573.5 114.6 L569.9 120.6 Z M575.5 124.9 L581.3 120.3 L587.7 116.4 L594.3 113.4 L600.5 111.1 L606 109.7 L610.9 109.1 L615.5 109.3 L620.3 110.3 L625.9 112.1 L626.1 111.7 L620.8 108.7 L616 106.7 L611 105.6 L605.5 105.5 L599.2 106.3 L592.2 108.1 L584.8 110.8 L577.4 114.5 L570.5 119.1 Z M573.8 124.9 L580.6 123.3 L588 122.4 L595.6 122.4 L602.8 123.2 L609.4 124.8 L615.5 127.3 L621.3 130.6 L627.2 134.9 L633.9 139.9 L634.2 139.6 L628.1 133.7 L622.5 128.8 L616.8 124.8 L610.5 121.6 L603.6 119.3 L596 117.9 L587.9 117.4 L579.8 117.8 L572.2 119.1 Z"/><path d="M857 260 L858 250.7 L859 241.3 L860.1 232 L861.2 222.7 L862.3 213.3 L863.4 204 L864.5 194.7 L865.6 185.3 L866.6 176 L867.6 166.7 L868.6 157.3 L869.5 148 L871.7 148 L871 157.3 L870.3 166.7 L869.5 176 L868.7 185.3 L867.9 194.7 L867.1 204 L866.2 213.3 L865.4 222.7 L864.6 232 L863.9 241.3 L863.3 250.7 L863 260 Z M868.8 145 L862.4 143.8 L856.6 143.4 L850.8 143.8 L844.7 145.1 L838.2 147.2 L831.2 150.1 L823.8 153.8 L816.6 158.3 L810 163.7 L810.3 164.1 L817.4 159.6 L824.9 155.8 L832.3 152.8 L839.3 150.5 L845.6 149.1 L851.2 148.5 L856.4 148.6 L861.5 149.4 L867.2 151 Z M870.1 145.6 L865.8 142.4 L862 139.8 L858.1 137.9 L853.9 136.7 L849.4 136.2 L844.4 136.5 L839.2 137.5 L834.2 139.2 L829.8 141.7 L830 142.1 L834.7 140.6 L839.7 139.7 L844.6 139.4 L849.1 139.7 L853 140.7 L856.3 142.2 L859.3 144.2 L862.4 147 L865.9 150.4 Z M871 146.6 L868.8 142 L867 137.8 L865.1 134.1 L862.9 130.7 L860.2 127.9 L857.1 125.6 L853.7 123.9 L850.3 122.8 L847.5 122.3 L847.3 122.8 L849.7 124.2 L852.4 125.9 L855.1 127.9 L857.5 130.4 L859.4 133.2 L860.8 136.5 L862 140.2 L863.2 144.5 L865 149.4 Z M871.3 148 L871.4 142.6 L871.9 137.6 L872.4 133.1 L872.7 129 L872.3 125.6 L871.5 122.7 L870.3 120.4 L869.1 118.9 L868.2 118 L867.8 118 L867.6 119.2 L868 120.9 L868.4 123.1 L868.6 125.7 L868.3 128.9 L867.5 132.7 L866.4 137.1 L865.3 142.2 L864.7 148 Z M870.5 149.2 L872.9 144.4 L875.8 140 L878.7 136 L881.3 132.4 L883.5 129.2 L885.1 126.6 L886.4 124.3 L887.7 122.6 L889.4 121.1 L889.2 120.6 L886.9 121.4 L885 122.9 L883.1 124.8 L881 127.3 L878.4 130.2 L875.3 133.5 L871.9 137.4 L868.5 141.9 L865.5 146.8 Z M869.8 150.2 L874.2 146.7 L879 143.6 L883.9 140.9 L888.5 138.6 L892.7 136.7 L896.3 135.2 L899.6 134.1 L903.1 133.4 L907 133 L907.1 132.5 L903 132 L899.3 132.1 L895.6 132.6 L891.6 133.7 L887.1 135.2 L882 137.1 L876.6 139.5 L871.2 142.4 L866.2 145.8 Z M869 151.7 L874.1 150.3 L879.6 149.5 L885.3 149.2 L890.7 149.5 L895.7 150.3 L900.3 151.7 L904.8 153.8 L909.4 156.4 L914.6 159.6 L914.9 159.2 L910.4 155 L906.1 151.5 L901.7 148.6 L897 146.3 L891.6 144.6 L885.6 143.6 L879.3 143.1 L873 143.4 L867 144.3 Z"/><path d="M1117 260 L1117.7 249 L1118 238 L1118.2 227 L1118.1 216 L1117.9 205 L1117.5 194 L1116.9 183 L1116.2 172 L1115.2 161 L1114.2 150 L1112.9 139 L1111.5 128 L1113.7 128 L1115.3 139 L1116.8 150 L1118.1 161 L1119.3 172 L1120.3 183 L1121.1 194 L1121.8 205 L1122.3 216 L1122.7 227 L1122.9 238 L1123 249 L1123 260 Z M1111 124.5 L1103.4 123.1 L1096.4 122.5 L1089.6 123 L1082.4 124.4 L1074.6 126.7 L1066.2 129.9 L1057.5 134 L1048.9 139.1 L1041 145.1 L1041.3 145.5 L1049.8 140.5 L1058.6 136.3 L1067.5 133 L1075.8 130.5 L1083.3 129 L1090 128.3 L1096.1 128.5 L1102.3 129.6 L1109 131.5 Z M1112.1 125.5 L1107.6 122 L1103.5 118.9 L1099.5 116.3 L1095 114.2 L1090.1 112.6 L1084.7 111.5 L1079.1 111 L1073.5 110.9 L1068.5 111.5 L1068.5 112 L1073.5 112.5 L1078.8 113.3 L1084.1 114.5 L1089 116.1 L1093.3 118.1 L1097 120.6 L1100.4 123.4 L1103.9 126.7 L1107.9 130.5 Z M1112.5 126.8 L1109.2 119.4 L1106.4 112.6 L1103.7 106.5 L1100.5 101.3 L1096.5 96.8 L1091.7 93.1 L1086.4 90.4 L1081.3 88.5 L1076.9 87.5 L1076.8 88 L1080.8 89.7 L1085.4 92.1 L1090.1 95.2 L1094.2 98.9 L1097.5 103.4 L1100.1 108.6 L1102.2 114.6 L1104.5 121.5 L1107.5 129.2 Z M1113.9 128 L1114.1 120.5 L1114.8 113.4 L1115.6 106.9 L1115.9 100.9 L1115.6 95.5 L1114.5 90.8 L1112.9 86.8 L1111.4 83.6 L1110.2 81 L1109.8 81 L1109.6 83.8 L1110.2 87.2 L1110.9 91.2 L1111.2 95.7 L1110.9 100.8 L1109.8 106.5 L1108.3 112.9 L1106.9 120.1 L1106.1 128 Z M1112.8 129.3 L1115.8 123.4 L1119.3 118.4 L1122.9 114 L1126.1 110.5 L1128.7 107.9 L1130.6 106 L1132 104.9 L1133.7 104.5 L1136.2 104.8 L1136.4 104.4 L1133.9 103 L1131.6 102.7 L1129.2 103.4 L1126.5 105.1 L1123.2 107.6 L1119.3 111 L1115.1 115.3 L1110.9 120.5 L1107.2 126.7 Z M1112.2 130.6 L1116.3 127.3 L1120.9 124.2 L1125.6 121.6 L1130 119.3 L1134 117.4 L1137.5 115.9 L1140.7 114.8 L1144 114.1 L1147.8 113.6 L1147.8 113.1 L1143.9 112.5 L1140.3 112.4 L1136.7 112.9 L1132.7 113.8 L1128.3 115.2 L1123.3 117 L1118 119.3 L1112.7 122.1 L1107.8 125.4 Z M1111 131.6 L1118.3 129.7 L1126.3 128.6 L1134.4 128.1 L1142.1 128.3 L1149.2 129.2 L1155.7 130.8 L1161.9 133.2 L1168.3 136.2 L1175.4 139.9 L1175.7 139.5 L1169.1 134.7 L1163 130.8 L1156.8 127.6 L1150.1 125.2 L1142.7 123.5 L1134.5 122.6 L1125.9 122.4 L1117.2 123 L1109 124.4 Z"/><path d="M1387 260 L1388.1 251 L1389.3 242 L1390.5 233 L1391.9 224 L1393.3 215 L1394.7 206 L1396.2 197 L1397.7 188 L1399.1 179 L1400.6 170 L1402 161 L1403.5 152 L1405.7 152 L1404.5 161 L1403.2 170 L1402 179 L1400.8 188 L1399.6 197 L1398.4 206 L1397.2 215 L1396.1 224 L1395.1 233 L1394.1 242 L1393.4 251 L1393 260 Z M1402.7 149.4 L1398.2 148.5 L1394 148.3 L1389.9 148.6 L1385.7 149.5 L1381.1 151 L1376.1 153.1 L1371 155.7 L1365.9 158.8 L1361.4 162.6 L1361.7 163 L1366.7 159.9 L1371.9 157.4 L1377.1 155.4 L1382 154 L1386.4 153.1 L1390.3 152.7 L1393.8 152.9 L1397.4 153.5 L1401.3 154.6 Z M1404.2 149.5 L1399.6 145.9 L1395.4 143.1 L1391.2 141 L1386.7 139.7 L1381.7 139.3 L1376.3 139.6 L1370.7 140.8 L1365.2 142.6 L1360.4 145.3 L1360.6 145.8 L1365.8 144.1 L1371.2 143.1 L1376.5 142.7 L1381.4 143 L1385.6 144 L1389.2 145.6 L1392.5 147.9 L1395.9 150.8 L1399.8 154.5 Z M1405.1 150.6 L1402.6 145.3 L1400.5 140.4 L1398.4 135.9 L1395.9 131.8 L1392.9 128.3 L1389.3 125.4 L1385.4 123 L1381.7 121.2 L1378.3 120 L1378.1 120.5 L1380.8 122.5 L1384 124.9 L1387.2 127.6 L1390 130.8 L1392.3 134.3 L1394 138.3 L1395.4 142.8 L1396.9 147.8 L1398.9 153.4 Z M1405.8 152 L1405.8 147.5 L1406.1 143.3 L1406.5 139.4 L1406.5 135.8 L1406.2 132.6 L1405.4 129.9 L1404.2 127.7 L1403.1 126 L1402.2 124.8 L1401.8 124.8 L1401.4 126.3 L1401.7 128.1 L1401.9 130.3 L1402 132.8 L1401.6 135.6 L1400.8 138.9 L1399.8 142.8 L1398.8 147.1 L1398.2 152 Z M1405.2 153.5 L1407.6 148.6 L1410.5 144 L1413.4 139.8 L1416.1 136 L1418.2 132.6 L1419.8 129.7 L1421.1 127.2 L1422.3 125.2 L1424.1 123.4 L1423.8 122.9 L1421.4 123.9 L1419.3 125.5 L1417.3 127.6 L1415.1 130.2 L1412.4 133.2 L1409.1 136.7 L1405.5 140.8 L1401.9 145.3 L1398.8 150.5 Z M1404.3 154.7 L1408.4 151.3 L1413.1 148.3 L1417.8 145.7 L1422.3 143.6 L1426.3 141.9 L1429.8 140.7 L1433 139.9 L1436.4 139.5 L1440.4 139.5 L1440.5 139 L1436.6 137.9 L1432.9 137.4 L1429.2 137.5 L1425.2 138.2 L1420.7 139.3 L1415.6 141 L1410.2 143.2 L1404.8 146 L1399.7 149.3 Z M1403 155.6 L1408.7 154.1 L1414.9 153.1 L1421.2 152.7 L1427.3 152.8 L1432.9 153.5 L1438 154.7 L1442.9 156.5 L1448 158.8 L1453.7 161.7 L1453.9 161.2 L1448.8 157.3 L1444 154.1 L1439.2 151.5 L1433.9 149.4 L1427.9 148 L1421.4 147.1 L1414.5 146.9 L1407.6 147.3 L1401 148.4 Z"/><path d="M1577 260 L1577.8 249.5 L1578.3 239 L1578.6 228.5 L1578.8 218 L1578.9 207.5 L1578.8 197 L1578.6 186.5 L1578.3 176 L1577.8 165.5 L1577.1 155 L1576.4 144.5 L1575.5 134 L1577.7 134 L1578.8 144.5 L1579.8 155 L1580.7 165.5 L1581.4 176 L1582 186.5 L1582.4 197 L1582.8 207.5 L1583 218 L1583.1 228.5 L1583.1 239 L1583.1 249.5 L1583 260 Z M1575 130.2 L1569.9 129.3 L1565.2 128.9 L1560.5 129.1 L1555.6 129.8 L1550.4 131 L1544.8 132.7 L1538.9 134.8 L1533.2 137.5 L1528.1 140.8 L1528.3 141.2 L1534 139.1 L1539.9 137.4 L1545.7 136.1 L1551.3 135.3 L1556.2 134.9 L1560.6 135 L1564.6 135.5 L1568.6 136.4 L1573 137.8 Z M1576.2 131.5 L1570.8 127.2 L1565.8 123.8 L1560.8 121.2 L1555.5 119.7 L1549.6 119 L1543.1 119.4 L1536.4 120.6 L1529.9 122.7 L1524 125.8 L1524.3 126.2 L1530.4 124.2 L1536.9 122.9 L1543.3 122.4 L1549.3 122.8 L1554.4 123.9 L1558.9 125.8 L1562.9 128.5 L1567 132.1 L1571.8 136.5 Z M1577.4 132.4 L1575 127.4 L1572.9 122.9 L1570.9 119 L1568.4 115.6 L1565.4 113 L1561.8 111.1 L1558.1 110 L1554.4 109.6 L1551.4 110.1 L1551.5 110.6 L1554.2 111.3 L1557.2 112.4 L1560.1 114 L1562.6 116.1 L1564.6 118.7 L1566.1 121.9 L1567.4 125.7 L1568.7 130.3 L1570.6 135.6 Z M1577.3 134 L1577.5 126 L1578.4 118.7 L1579.3 112 L1579.8 106 L1579.4 100.8 L1578.4 96.3 L1576.8 92.7 L1575.3 89.9 L1574.2 88 L1573.8 88 L1573.7 90.2 L1574.5 93.1 L1575.3 96.7 L1575.7 100.9 L1575.4 105.9 L1574.4 111.7 L1572.9 118.2 L1571.5 125.7 L1570.7 134 Z M1576.9 135.3 L1579.8 129.6 L1583.2 124.7 L1586.7 120.5 L1589.8 117.1 L1592.2 114.5 L1594.1 112.7 L1595.5 111.7 L1597.1 111.3 L1599.6 111.6 L1599.8 111.1 L1597.3 109.8 L1595.1 109.4 L1592.7 110.1 L1590 111.6 L1586.8 114.1 L1583 117.4 L1578.8 121.6 L1574.7 126.6 L1571.1 132.7 Z M1576.4 136.8 L1581.9 132.5 L1588 128.8 L1594.1 126 L1600 123.9 L1605.2 122.5 L1609.8 122 L1614.1 122.2 L1618.6 123.3 L1623.9 125 L1624.2 124.6 L1619.2 121.7 L1614.6 119.7 L1609.9 118.6 L1604.7 118.5 L1598.8 119.2 L1592.2 120.8 L1585.1 123.4 L1578.1 126.8 L1571.6 131.2 Z M1574.8 137 L1580.6 135.6 L1586.9 134.7 L1593.4 134.3 L1599.5 134.6 L1605.2 135.4 L1610.3 136.9 L1615.3 138.9 L1620.4 141.5 L1626.1 144.7 L1626.3 144.3 L1621.2 140.3 L1616.3 136.9 L1611.4 134.1 L1606.1 132 L1600.1 130.5 L1593.6 129.6 L1586.6 129.4 L1579.7 129.9 L1573.2 131 Z"/></g>
+    <g fill="#0f4028"><path d="M147 262 L148.3 244.2 L149.7 226.3 L151.4 208.5 L153.3 190.7 L155.3 172.8 L157.4 155 L159.6 137.2 L161.8 119.3 L164.2 101.5 L166.6 83.7 L169 65.8 L171.5 48 L173.7 48 L171.4 65.8 L169.2 83.7 L167.1 101.5 L165 119.3 L163 137.2 L161 155 L159.2 172.8 L157.5 190.7 L155.9 208.5 L154.6 226.3 L153.5 244.2 L153 262 Z M170.8 44.8 L159.5 42.4 L149.1 41 L138.8 40.6 L127.9 41.1 L116 42.6 L103 45.2 L89.4 48.7 L76 53.2 L63.6 58.7 L63.8 59.2 L76.5 54.6 L90.1 50.9 L103.7 48.1 L116.5 46.3 L128.2 45.4 L138.7 45.4 L148.5 46.4 L158.4 48.3 L169.2 51.2 Z M171.9 45.7 L163.9 39.2 L156.7 33.4 L149.5 28.6 L141.8 24.7 L133 21.7 L123.4 19.6 L113.2 18.4 L103.1 18.1 L94 18.8 L94 19.3 L103.1 19.6 L112.9 20.5 L122.8 22.3 L132 24.9 L140.2 28.3 L147.3 32.5 L153.8 37.6 L160.5 43.5 L168.1 50.3 Z M173.2 46.5 L169.2 37.6 L165.9 29.6 L162.6 22.4 L158.7 16.2 L153.9 10.9 L148.2 6.8 L141.9 3.7 L135.8 1.6 L130.5 0.7 L130.4 1.2 L135.2 3.2 L140.7 5.8 L146.2 9.3 L151.1 13.7 L155 18.9 L158 25 L160.6 32.1 L163.2 40.3 L166.8 49.5 Z M173.8 48 L174.1 37 L175.4 27.3 L176.7 18.9 L177.4 11.8 L177 6.1 L175.6 1.7 L173.5 -1.2 L171.3 -2.6 L169.8 -2 L170.2 -2 L170.1 -1.5 L171 -0.2 L172.2 2.3 L172.9 6.3 L172.5 11.6 L171.1 18.4 L169.1 26.8 L167.2 36.6 L166.2 48 Z M172.7 49.3 L177.3 40.4 L182.7 32.3 L188.3 24.9 L193.3 18.2 L197.3 12.3 L200.5 7.1 L203.1 2.8 L205.7 -0.7 L209.1 -3.7 L208.8 -4.1 L204.8 -1.9 L201.5 1.3 L198.4 5.4 L194.7 10.2 L190.1 15.8 L184.6 22.3 L178.6 29.6 L172.6 37.7 L167.3 46.7 Z M172.5 50.9 L181.6 43.9 L191.7 37.8 L201.9 32.7 L211.6 28.6 L220.2 25.6 L227.8 23.6 L234.8 22.6 L242 22.6 L250.3 23.6 L250.4 23.1 L242.2 20.9 L234.8 19.9 L227.3 20.1 L219.1 21.5 L209.9 23.9 L199.6 27.5 L188.6 32.2 L177.6 38 L167.5 45.1 Z M170.8 50.8 L182.5 48.1 L195.1 46.5 L208 46 L220.2 46.6 L231.4 48.2 L241.5 51 L251.2 54.9 L261 60 L271.8 66 L272.1 65.6 L261.7 58.7 L252 53.1 L242.4 48.5 L232.1 45.1 L220.6 42.8 L208.1 41.7 L194.8 41.7 L181.6 42.9 L169.2 45.2 Z"/><path d="M402 262 L402.6 248.5 L402.8 235 L402.7 221.5 L402.4 208 L401.9 194.5 L401.2 181 L400.2 167.5 L399.1 154 L397.7 140.5 L396.2 127 L394.4 113.5 L392.5 100 L394.7 100 L396.8 113.5 L398.8 127 L400.6 140.5 L402.2 154 L403.6 167.5 L404.8 181 L405.8 194.5 L406.6 208 L407.2 221.5 L407.7 235 L407.9 248.5 L408 262 Z M391.7 97.3 L383.6 95.7 L376.2 94.9 L368.9 94.9 L361.1 95.9 L352.7 97.7 L343.5 100.4 L333.9 103.9 L324.5 108.3 L315.8 113.6 L316 114 L325.1 109.5 L334.7 105.7 L344.3 102.8 L353.4 100.7 L361.6 99.5 L369 99 L375.9 99.4 L382.7 100.6 L390.3 102.7 Z M393.3 97.3 L387.6 92.8 L382.4 88.8 L377.2 85.4 L371.6 82.7 L365.4 80.6 L358.5 79.1 L351.2 78.3 L344.1 78.2 L337.7 78.8 L337.7 79.3 L344.1 79.8 L350.9 80.8 L357.7 82.3 L364.1 84.3 L369.7 86.9 L374.5 90 L379 93.6 L383.5 97.9 L388.7 102.7 Z M393.9 98.7 L390.6 91.6 L388 85.2 L385.3 79.6 L382.2 74.6 L378.3 70.6 L373.7 67.3 L368.6 65 L363.7 63.6 L359.6 63.1 L359.5 63.6 L363.3 65 L367.6 67 L371.9 69.7 L375.8 73.1 L378.9 77.1 L381.3 81.9 L383.2 87.5 L385.3 94 L388.1 101.3 Z M394.5 100 L394.6 93.1 L395.3 87 L396 81.5 L396.4 76.8 L396 72.8 L395 69.6 L393.6 67.3 L392.2 65.9 L391.2 65.6 L390.8 65.6 L390.7 66.5 L391.3 68 L391.9 70.1 L392.2 72.9 L391.9 76.6 L390.9 81.1 L389.6 86.5 L388.3 92.8 L387.5 100 Z M394.6 101.6 L398.6 93.8 L403.3 86.8 L408.1 80.7 L412.5 75.5 L416 71.3 L418.7 68.1 L420.8 65.9 L423 64.5 L426.2 63.8 L426.2 63.3 L422.7 62.7 L419.6 63.4 L416.5 65.3 L413 68.2 L408.7 72.1 L403.6 77 L397.9 83 L392.3 90.1 L387.4 98.4 Z M393.5 102.9 L399.4 98.3 L405.9 94.4 L412.5 91.3 L418.8 89 L424.3 87.5 L429.3 86.8 L433.9 86.9 L438.7 87.8 L444.4 89.5 L444.6 89 L439.3 86.1 L434.4 84.2 L429.3 83.2 L423.8 83.2 L417.5 84.1 L410.4 85.9 L402.9 88.7 L395.4 92.4 L388.5 97.1 Z M391.8 103.2 L399.8 101.3 L408.4 99.9 L417.2 99.1 L425.5 99 L433.2 99.5 L440.2 100.6 L446.8 102.3 L453.5 104.6 L461 107.4 L461.2 107 L454.1 103.1 L447.5 100 L440.9 97.6 L433.7 95.8 L425.8 94.7 L417.1 94.2 L407.9 94.4 L398.8 95.3 L390.2 96.8 Z"/><path d="M637 262 L638.4 242.3 L640.1 222.7 L642.1 203 L644.3 183.3 L646.8 163.7 L649.4 144 L652.1 124.3 L655 104.7 L658 85 L661 65.3 L664.2 45.7 L667.5 26 L669.7 26 L666.6 45.7 L663.7 65.3 L660.8 85 L658.1 104.7 L655.5 124.3 L653 144 L650.7 163.7 L648.5 183.3 L646.6 203 L644.9 222.7 L643.7 242.3 L643 262 Z M667 22.4 L656.9 20.3 L647.6 19.2 L638.5 19.1 L628.8 20 L618.3 21.9 L606.8 24.8 L594.9 28.6 L583.1 33.4 L572.3 39.3 L572.5 39.7 L583.8 35 L595.8 31.1 L607.7 28.1 L619 26 L629.3 24.9 L638.5 24.7 L647 25.4 L655.6 27.1 L665 29.6 Z M667.9 23.8 L659.1 16.6 L651.1 10.8 L643.2 6.4 L634.6 3.6 L625 2.2 L614.4 2.4 L603.3 4 L592.3 7.1 L582.4 11.7 L582.7 12.1 L592.8 8.4 L603.7 6 L614.6 5.1 L624.7 5.5 L633.6 7.3 L641.4 10.4 L648.6 14.9 L655.8 20.8 L664.1 28.2 Z M669.3 24.5 L664.2 13 L660 2.9 L655.8 -5.8 L650.9 -13 L644.7 -18.7 L637.3 -22.6 L629.3 -24.9 L621.5 -25.6 L615 -24.5 L615.1 -24.1 L621.5 -23.9 L628.6 -22.5 L635.8 -19.7 L642.1 -15.5 L647.3 -10 L651.2 -3 L654.6 5.6 L658.1 15.7 L662.7 27.5 Z M669.6 26 L670.2 11.7 L671.9 -1.1 L673.7 -12.5 L674.8 -22.5 L674.4 -30.9 L672.7 -37.8 L670.2 -43 L667.7 -46.5 L666.2 -48.4 L665.8 -48.4 L666.1 -46.1 L667.7 -42.4 L669.4 -37.3 L670.4 -30.7 L670 -22.6 L668.4 -13 L665.9 -1.6 L663.6 11.3 L662.4 26 Z M669.6 27.7 L674.3 18.4 L679.9 9.9 L685.6 2.1 L690.8 -4.9 L695 -11.1 L698.3 -16.5 L700.9 -21 L703.5 -24.8 L707 -27.9 L706.8 -28.4 L702.4 -26.2 L698.9 -22.9 L695.5 -18.8 L691.6 -13.8 L686.7 -8 L680.9 -1.3 L674.4 6.3 L668 14.8 L662.4 24.3 Z M668.2 28.6 L678.6 20.7 L690 14.3 L701.6 9.4 L712.5 6 L722.2 4.2 L730.8 3.9 L738.8 5.1 L747.1 7.9 L756.6 12.2 L756.8 11.7 L747.7 6.4 L739.4 2.8 L731.1 0.8 L721.9 0.4 L711.5 1.7 L699.8 4.6 L687.5 9.2 L675.1 15.5 L663.8 23.4 Z M666.8 29 L679.2 26.2 L692.5 24.7 L706 24.7 L718.9 26.1 L730.8 28.9 L741.6 33.1 L751.8 38.8 L762.2 45.9 L773.7 54.3 L774 54 L763.1 44.7 L753 36.9 L742.8 30.5 L731.9 25.6 L719.7 22.1 L706.4 20.1 L692.3 19.6 L678.3 20.6 L665.2 23 Z"/><path d="M897 262 L897.5 247.3 L897.6 232.7 L897.3 218 L896.7 203.3 L895.9 188.7 L894.8 174 L893.5 159.3 L892 144.7 L890.2 130 L888.2 115.3 L885.9 100.7 L883.5 86 L885.7 86 L888.4 100.7 L890.8 115.3 L893.1 130 L895.1 144.7 L896.9 159.3 L898.5 174 L899.8 188.7 L900.9 203.3 L901.8 218 L902.4 232.7 L902.8 247.3 L903 262 Z M883 82.4 L874.8 80.8 L867.3 80 L860 80 L852.2 80.8 L843.8 82.4 L834.6 84.8 L825.1 88 L815.6 92 L807 96.8 L807.3 97.3 L816.3 93.5 L825.9 90.4 L835.5 88.1 L844.5 86.4 L852.7 85.6 L860 85.5 L866.8 86.1 L873.6 87.5 L881 89.6 Z M884.4 83.2 L877.6 77.8 L871.4 73 L865.3 68.9 L858.7 65.6 L851.3 63 L843.1 61.1 L834.5 60 L826 59.7 L818.3 60.2 L818.4 60.7 L825.9 61.4 L834.1 62.6 L842.3 64.4 L849.9 66.8 L856.7 69.9 L862.5 73.6 L867.9 78 L873.4 83 L879.6 88.8 Z M884.9 84.7 L881.3 76.7 L878.4 69.8 L875.4 63.8 L871.9 59 L867.4 55.3 L862.2 52.8 L856.6 51.6 L851.2 51.6 L846.6 52.9 L846.8 53.4 L851.2 53.1 L856.1 53.8 L861 55.5 L865.3 58.2 L868.7 61.8 L871.3 66.4 L873.6 72.2 L875.9 79.2 L879.1 87.3 Z M884.8 86 L885.3 75.7 L886.5 66.6 L887.8 58.8 L888.5 52.2 L888.2 46.9 L887 42.9 L885.1 40.2 L883.1 38.9 L881.8 39.6 L882.2 39.6 L882.2 40 L883.2 41 L884.4 43.4 L885 47 L884.8 52 L883.5 58.4 L881.8 66.2 L880 75.4 L879.2 86 Z M885.2 87.4 L889.8 78.5 L895.2 70.6 L900.8 63.7 L905.8 57.9 L909.9 53.2 L913 49.7 L915.5 47.2 L918.1 45.7 L921.7 45 L921.8 44.5 L917.8 44.1 L914.4 45 L911.1 47.1 L907.2 50.4 L902.4 54.9 L896.8 60.5 L890.5 67.3 L884.3 75.3 L878.8 84.6 Z M884.3 88.7 L891 83.5 L898.3 79.1 L905.8 75.5 L912.8 72.7 L919.1 70.8 L924.7 69.7 L929.9 69.4 L935.2 70 L941.4 71.3 L941.6 70.8 L935.6 68.4 L930.1 66.9 L924.5 66.4 L918.4 66.9 L911.5 68.3 L903.7 70.6 L895.5 73.8 L887.3 78.1 L879.7 83.3 Z M882.8 89 L889.7 87.3 L897.2 86.4 L904.9 86.2 L912.2 86.8 L918.9 88.2 L925 90.4 L930.9 93.4 L936.9 97.2 L943.6 101.7 L943.9 101.3 L937.8 95.9 L932 91.4 L926.2 87.7 L919.9 84.9 L912.9 82.8 L905.2 81.6 L897 81.2 L888.9 81.7 L881.2 83 Z"/><path d="M1147 262 L1148.2 243.5 L1149.5 225 L1151 206.5 L1152.6 188 L1154.3 169.5 L1156.1 151 L1157.9 132.5 L1159.8 114 L1161.7 95.5 L1163.6 77 L1165.5 58.5 L1167.5 40 L1169.7 40 L1167.9 58.5 L1166.2 77 L1164.5 95.5 L1162.9 114 L1161.3 132.5 L1159.7 151 L1158.2 169.5 L1156.8 188 L1155.5 206.5 L1154.4 225 L1153.5 243.5 L1153 262 Z M1166.8 37.2 L1155.8 34.9 L1145.8 33.8 L1135.9 33.9 L1125.4 35.2 L1114 37.7 L1101.5 41.3 L1088.5 46.2 L1075.6 52.3 L1063.7 59.6 L1064 60.1 L1076.2 53.5 L1089.3 48.1 L1102.3 43.9 L1114.7 40.8 L1126 38.9 L1136.1 38.1 L1145.5 38.5 L1154.9 40.1 L1165.2 42.8 Z M1167.9 37.8 L1159.1 30.6 L1151.2 24.4 L1143.4 19.1 L1134.9 15 L1125.3 11.8 L1114.8 9.8 L1103.6 8.7 L1092.6 8.8 L1082.6 9.9 L1082.7 10.4 L1092.6 10.2 L1103.4 10.8 L1114.3 12.4 L1124.4 15 L1133.4 18.5 L1141.3 22.9 L1148.5 28.3 L1155.8 34.8 L1164.1 42.2 Z M1169.6 38.3 L1164.4 26.8 L1160.2 16.5 L1156 7.3 L1151.1 -0.6 L1144.9 -7.1 L1137.5 -12.3 L1129.5 -16 L1121.6 -18.3 L1114.9 -19.1 L1114.9 -18.6 L1121.1 -16.6 L1128.3 -13.6 L1135.4 -9.4 L1141.8 -4 L1147 2.5 L1151 10.2 L1154.3 19.3 L1157.8 29.8 L1162.4 41.7 Z M1170 40 L1170.2 30.1 L1171.3 21.2 L1172.4 13.1 L1173 6 L1172.6 -0.2 L1171.3 -5.2 L1169.4 -9.2 L1167.5 -12 L1166.2 -13.7 L1165.8 -13.7 L1165.8 -11.6 L1166.7 -8.6 L1167.7 -4.8 L1168.3 0 L1167.9 5.8 L1166.6 12.7 L1164.8 20.6 L1163 29.7 L1162 40 Z M1169 41.4 L1173.6 32.7 L1178.9 24.7 L1184.3 17.5 L1189.2 11.1 L1193.3 5.6 L1196.3 0.9 L1198.8 -2.9 L1201.4 -5.9 L1204.7 -8.2 L1204.6 -8.7 L1200.5 -7.2 L1197.3 -4.6 L1194.1 -1.1 L1190.4 3.2 L1185.8 8.4 L1180.3 14.6 L1174.3 21.6 L1168.2 29.6 L1163 38.6 Z M1168.1 42.5 L1178.8 34.3 L1190.7 27.4 L1202.6 21.8 L1213.9 17.5 L1223.9 14.5 L1232.8 12.8 L1241.1 12.4 L1249.5 13.2 L1259.1 15.4 L1259.3 14.9 L1249.8 11.7 L1241.2 10.1 L1232.6 9.8 L1223.2 10.9 L1212.6 13.4 L1200.7 17.3 L1188.1 22.6 L1175.5 29.3 L1163.9 37.5 Z M1166.9 43.3 L1179.7 40.3 L1193.5 38.5 L1207.5 37.8 L1220.9 38.4 L1233.1 40 L1244.2 42.9 L1254.8 46.9 L1265.5 52.2 L1277.3 58.5 L1277.6 58.1 L1266.2 50.8 L1255.7 44.8 L1245.2 40 L1233.9 36.4 L1221.4 34 L1207.6 32.8 L1193.1 32.9 L1178.7 34.2 L1165.1 36.7 Z"/><path d="M1417 262 L1417.7 248 L1417.9 234 L1417.9 220 L1417.8 206 L1417.4 192 L1416.8 178 L1416.1 164 L1415.1 150 L1414 136 L1412.7 122 L1411.2 108 L1409.5 94 L1411.7 94 L1413.6 108 L1415.3 122 L1416.9 136 L1418.2 150 L1419.4 164 L1420.5 178 L1421.3 192 L1422 206 L1422.5 220 L1422.8 234 L1422.9 248 L1423 262 Z M1409 90.5 L1400 88.7 L1391.7 87.9 L1383.6 88.2 L1375 89.4 L1365.7 91.7 L1355.6 95 L1345.1 99.3 L1334.7 104.6 L1325.2 110.9 L1325.5 111.3 L1335.5 106 L1346.1 101.6 L1356.7 98.1 L1366.7 95.6 L1375.8 94.1 L1383.9 93.6 L1391.3 93.9 L1398.8 95.2 L1407 97.5 Z M1410.2 91.3 L1403.5 85.9 L1397.4 81.2 L1391.2 77.1 L1384.6 73.8 L1377.2 71.3 L1369.1 69.6 L1360.5 68.6 L1352.1 68.4 L1344.4 69.1 L1344.4 69.6 L1352 70 L1360.2 71.1 L1368.4 72.7 L1376 75 L1382.8 78 L1388.6 81.6 L1394 85.9 L1399.5 90.9 L1405.8 96.7 Z M1411 92.6 L1407.6 85.3 L1404.9 78.6 L1402.2 72.5 L1399 67 L1395 62.2 L1390.3 58.1 L1385.1 54.8 L1380.1 52.2 L1375.7 50.5 L1375.4 50.9 L1379.2 53.5 L1383.7 56.6 L1388.2 60.3 L1392.2 64.5 L1395.4 69.4 L1397.9 74.8 L1400 80.9 L1402.2 87.8 L1405 95.4 Z M1411.4 94 L1411.7 84.3 L1412.8 75.6 L1414 68 L1414.6 61.3 L1414.3 55.8 L1413 51.4 L1411.2 48.3 L1409.4 46.3 L1408.2 45.8 L1407.8 45.8 L1407.9 46.9 L1408.8 48.9 L1409.9 51.9 L1410.5 56 L1410.1 61.2 L1408.9 67.5 L1407.2 75.1 L1405.5 83.9 L1404.6 94 Z M1410.8 95.3 L1415 87.2 L1419.9 79.9 L1424.9 73.4 L1429.5 67.8 L1433.2 63 L1436 59 L1438.3 56 L1440.7 53.7 L1443.8 52.1 L1443.7 51.6 L1440.1 52.4 L1437 54.2 L1434.1 57 L1430.6 60.7 L1426.4 65.2 L1421.3 70.7 L1415.7 77.1 L1410.1 84.4 L1405.2 92.7 Z M1410 96.4 L1416.5 91.3 L1423.7 86.7 L1431.1 82.8 L1438 79.3 L1444.1 76.5 L1449.6 74.3 L1454.6 72.6 L1459.7 71.5 L1465.5 70.9 L1465.5 70.4 L1459.6 70.1 L1454.2 70.4 L1448.8 71.5 L1442.9 73.2 L1436.3 75.6 L1428.9 78.6 L1421.1 82.3 L1413.2 86.6 L1406 91.6 Z M1408.9 97.3 L1417 95.4 L1425.7 94.2 L1434.6 93.9 L1443.1 94.3 L1450.9 95.7 L1458.1 97.8 L1464.9 100.8 L1471.8 104.7 L1479.6 109.3 L1479.9 108.9 L1472.7 103.3 L1466 98.7 L1459.2 94.9 L1451.9 91.9 L1443.8 89.9 L1434.9 88.7 L1425.4 88.5 L1416 89.1 L1407.1 90.7 Z"/><path d="M1592 262 L1593.3 244.8 L1594.8 227.7 L1596.6 210.5 L1598.6 193.3 L1600.8 176.2 L1603 159 L1605.4 141.8 L1607.9 124.7 L1610.4 107.5 L1613.1 90.3 L1615.7 73.2 L1618.5 56 L1620.7 56 L1618.2 73.2 L1615.7 90.3 L1613.3 107.5 L1611 124.7 L1608.8 141.8 L1606.7 159 L1604.7 176.2 L1602.8 193.3 L1601.2 210.5 L1599.7 227.7 L1598.6 244.8 L1598 262 Z M1617.9 52.9 L1609.8 51.2 L1602.3 50.6 L1595 51.1 L1587.3 52.5 L1579 55 L1569.9 58.5 L1560.5 62.9 L1551.2 68.3 L1542.7 74.8 L1543 75.2 L1552 69.6 L1561.6 64.9 L1571.1 61.2 L1580.1 58.5 L1588.2 56.7 L1595.4 55.9 L1602.1 56.1 L1608.8 57.1 L1616.1 59.1 Z M1619.5 53 L1611.2 46.3 L1603.6 40.7 L1596 36.2 L1587.9 33 L1578.8 30.9 L1568.8 30.1 L1558.2 30.5 L1547.9 32.1 L1538.6 35 L1538.7 35.5 L1548.2 33.9 L1558.4 33.2 L1568.5 33.7 L1577.9 35.2 L1586.2 37.8 L1593.5 41.4 L1600 46.1 L1606.8 52 L1614.5 59 Z M1620.2 54.5 L1615.6 44.3 L1611.8 35.3 L1608.1 27.7 L1603.6 21.5 L1598 16.8 L1591.4 13.7 L1584.2 12.1 L1577.3 12.1 L1571.5 13.8 L1571.6 14.2 L1577.4 13.8 L1583.8 14.5 L1590.1 16.6 L1595.7 20 L1600.2 24.6 L1603.7 30.6 L1606.6 38 L1609.7 47 L1613.8 57.5 Z M1620.5 56 L1620.8 45.4 L1622 35.4 L1623.3 26.2 L1624 17.7 L1623.7 10.1 L1622.3 3.2 L1620.4 -2.7 L1618.5 -7.7 L1617.2 -11.9 L1616.8 -11.9 L1616.9 -7.5 L1618 -2.4 L1619.2 3.5 L1619.8 10.2 L1619.5 17.6 L1618.2 25.8 L1616.3 35 L1614.5 45 L1613.5 56 Z M1620.3 57.5 L1626.2 46.2 L1633.1 36 L1640.1 26.9 L1646.5 18.8 L1651.7 11.9 L1655.8 6.1 L1659 1.4 L1662.4 -2.2 L1666.8 -4.8 L1666.7 -5.3 L1661.6 -3.6 L1657.4 -0.5 L1653.4 3.8 L1648.7 9.3 L1642.8 15.9 L1635.8 23.7 L1628.1 32.7 L1620.4 43 L1613.7 54.5 Z M1619.5 58.9 L1628.2 52.2 L1637.8 46.1 L1647.6 40.9 L1656.8 36.5 L1665 32.9 L1672.3 30 L1678.9 28 L1685.8 26.8 L1693.6 26.3 L1693.6 25.8 L1685.7 25.1 L1678.5 25.4 L1671.4 26.7 L1663.6 28.8 L1654.8 31.9 L1645 35.8 L1634.6 40.6 L1624.2 46.4 L1614.5 53.1 Z M1618 59.6 L1628.1 57.2 L1639.1 55.8 L1650.2 55.5 L1660.8 56.3 L1670.6 58.2 L1679.5 61.2 L1688 65.3 L1696.6 70.6 L1706.3 76.9 L1706.6 76.5 L1697.6 69.2 L1689.2 63.1 L1680.8 58.1 L1671.7 54.3 L1661.6 51.6 L1650.5 50 L1638.8 49.7 L1627 50.4 L1616 52.4 Z"/></g>
+  </svg>
+  </div>
+</section>
+
+<section id="overview">
+  <div class="wrap">
+    <div class="hd rv">
+      <span class="eyebrow"><span class="dot"></span>01 — Overview</span>
+      <h2>A rainforest that generates itself.</h2>
+      <p class="lede">Amazon Expedition 3D is a complete, playable 3D world shipped as <b>one HTML file and one library</b>. The world is not modelled — it is <i>computed</i>. A closed-form height function carves rolling hills, cuts a river channel through the middle of the map, and raises a temple mound at the far end. Everything that stands on that surface is scattered by seeded random placement, then animated by parametric trigonometry.</p>
+      <div class="rule"></div>
+      <p class="lede">The design brief was simple: <b>maximum atmosphere for minimum bytes</b>. No textures, no mesh files, no audio files — every surface is shaded by a Lambert or Phong material, every creature is eight lines of primitive geometry, and every sound is a synthesised oscillator. What the player gets is a jungle that feels alive because the maths says it should.</p>
+    </div>
+
+    <div class="stats rv">
+      <div class="stat e"><div class="n"><span data-count="12321" data-fmt="comma">0</span></div><div class="l">Terrain vertices</div><div class="s">A 110 × 110 displaced grid, normals recomputed per frame of generation.</div></div>
+      <div class="stat"><div class="n"><span data-count="730">0</span></div><div class="l">Placed objects</div><div class="s">240 trees · 70 rocks · 420 grass tufts, all instanced as primitives.</div></div>
+      <div class="stat b"><div class="n"><span data-count="50">0</span></div><div class="l">Wildlife agents</div><div class="s">14 birds, 30 butterflies, 6 monkeys — each on its own orbit.</div></div>
+      <div class="stat g"><div class="n"><span data-count="747">0</span></div><div class="l">Lines of shippable code</div><div class="s">Game, HUD, audio and world in a single <code>amazon_3d.html</code>.</div></div>
+    </div>
+
+    <div class="grid g3" style="margin-top:24px">
+      <article class="card rv" style="--i:0">
+        <h3>Zero-install delivery</h3>
+        <p style="color:var(--ink-3);font-size:14.5px;margin-top:10px">Open the file. No server, no npm, no build pipeline. The Three.js runtime is vendored next to it and the whole experience is served by the browser's own engine.</p>
+      </article>
+      <article class="card rv" style="--i:1">
+        <h3>Deterministic systems</h3>
+        <p style="color:var(--ink-3);font-size:14.5px;margin-top:10px">Height, river depth, ruin placement, wildlife orbits and pickups are all closed-form functions — inspectable, tunable and readable, which is what makes a 747-line project still feel architected.</p>
+      </article>
+      <article class="card rv" style="--i:2">
+        <h3>One-hour loop, real tension</h3>
+        <p style="color:var(--ink-3);font-size:14.5px;margin-top:10px">Energy drains as you sprint and wade, restores when you rest, and forces route decisions: cross the river fast and pay for it, or take the long jungle path.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="identity">
+  <div class="wrap">
+    <div class="hd rv">
+      <span class="eyebrow"><span class="dot"></span>02 — Identity</span>
+      <h2>A logo system, not a logo.</h2>
+      <p class="lede">The mark was drawn as vectors for this project: a <b>tapered triangle</b> reading as both a jungle canopy and the letter A, a <b>cyan river bar</b> cutting through its crossbar, a <b>gold gem</b> crowning the apex, and a <b>hill line</b> grounding it. The same construction scales from a 290&nbsp;px badge down to a 24&nbsp;px favicon without redrawing.</p>
+    </div>
+
+    <div class="brands rv">
+      <div class="brandcard">
+        <div class="stagebox grid-bg">
+          <svg class="mark" viewBox="0 0 200 200" style="width:186px" role="img" aria-label="Primary emblem">
+            <circle cx="100" cy="100" r="94" fill="none" stroke="url(#gMint)" stroke-width="6"/>
+            <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(255,213,74,.5)" stroke-width="2" stroke-dasharray="2 9" stroke-linecap="round"/>
+            <circle cx="100" cy="100" r="64" fill="url(#gDisc)" stroke="rgba(125,255,160,.35)" stroke-width="2"/>
+            <path d="M100 54 L138 140 H62 Z" fill="none" stroke="url(#gMint)" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M100 56 L130 122 H70 Z" fill="rgba(125,255,160,.1)"/>
+            <rect x="71" y="119" width="58" height="10" rx="5" fill="url(#gGem)"/>
+            <path d="M100 26 l8 10 -8 10 -8 -10 z" fill="url(#gGold)"/>
+            <path d="M38 152 Q100 132 162 152" fill="none" stroke="#1f8a4f" stroke-width="5" stroke-linecap="round"/>
+            <text font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="3.4" fill="#7dffa0"><textPath href="#arcTop" startOffset="50%" text-anchor="middle">AMAZON EXPEDITION</textPath></text>
+            <text font-family="Inter,Segoe UI,Arial,sans-serif" font-size="9" font-weight="600" letter-spacing="2.6" fill="#ffd54a" opacity=".92"><textPath href="#arcBot" startOffset="50%" text-anchor="middle">· FIRST-PERSON ADVENTURE ·</textPath></text>
+          </svg>
+        </div>
+        <div class="cap"><b>Primary emblem</b><span>Full badge · title, seal, cover art</span></div>
+      </div>
+
+      <div class="brandcard">
+        <div class="stagebox grid-bg" style="gap:20px;padding:26px 22px">
+          <div style="display:flex;align-items:center;gap:20px;width:100%;justify-content:center">
+            <svg viewBox="0 0 200 200" style="width:74px;flex:none" aria-hidden="true">
+              <circle cx="100" cy="100" r="94" fill="none" stroke="url(#gMint)" stroke-width="9"/>
+              <circle cx="100" cy="100" r="62" fill="url(#gDisc)"/>
+              <path d="M100 56 L137 140 H63 Z" fill="none" stroke="url(#gMint)" stroke-width="15" stroke-linejoin="round" stroke-linecap="round"/>
+              <rect x="69" y="116.5" width="62" height="13" rx="6.5" fill="url(#gGem)"/>
+              <path d="M100 30 l8 10 -8 10 -8 -10 z" fill="url(#gGold)"/>
+            </svg>
+            <div>
+              <div style="font-family:var(--display);font-size:26px;line-height:1;letter-spacing:.03em">Amazon Expedition</div>
+              <div style="font-size:13px;letter-spacing:.44em;color:var(--mint);margin-top:9px;font-weight:600">THREE&nbsp;D</div>
+            </div>
+          </div>
+          <div style="font-size:10.5px;letter-spacing:.3em;color:var(--ink-3);text-transform:uppercase">A jungle generated by mathematics</div>
+        </div>
+        <div class="cap"><b>Horizontal lockup</b><span>Navigation, headers, video</span></div>
+      </div>
+
+      <div class="brandcard">
+        <div class="stagebox light">
+          <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;justify-content:center">
+            <svg viewBox="0 0 200 200" style="width:82px" aria-hidden="true">
+              <rect x="4" y="4" width="192" height="192" rx="46" fill="#04140a"/>
+              <path d="M100 48 L144 148 H56 Z" fill="none" stroke="url(#gMint)" stroke-width="15" stroke-linejoin="round" stroke-linecap="round"/>
+              <rect x="64" y="117.5" width="72" height="13" rx="6.5" fill="url(#gGem)"/>
+              <path d="M100 22 l9 11 -9 11 -9 -11 z" fill="url(#gGold)"/>
+            </svg>
+            <svg viewBox="0 0 200 200" style="width:56px" aria-hidden="true">
+              <rect x="4" y="4" width="192" height="192" rx="46" fill="#fff" stroke="#0b1f14" stroke-width="4"/>
+              <path d="M100 48 L144 148 H56 Z" fill="none" stroke="#0b1f14" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/>
+              <path d="M70 124 H130" stroke="#0b1f14" stroke-width="13" stroke-linecap="round"/>
+            </svg>
+            <svg viewBox="0 0 200 200" style="width:34px" aria-hidden="true">
+              <rect x="4" y="4" width="192" height="192" rx="46" fill="#04140a"/>
+              <path d="M100 48 L144 148 H56 Z" fill="none" stroke="url(#gMint)" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+              <rect x="64" y="115.5" width="72" height="17" rx="8.5" fill="url(#gGem)"/>
+            </svg>
+          </div>
+        </div>
+        <div class="cap"><b>App icon &amp; favicon</b><span>Rounded tile, dark and mono</span></div>
+      </div>
+
+      <div class="brandcard">
+        <div class="stagebox">
+          <svg viewBox="0 0 300 268" style="width:100%;max-width:250px" role="img" aria-label="Isometric dimension emblem: the Amazon Expedition mark on the top face of a cube">
+            <path d="M150 30 L228 78 L150 126 L72 78 Z" fill="#0e2a1c" stroke="#2ecc71" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M72 78 L150 126 L150 232 L72 184 Z" fill="#061410" stroke="#1f8a4f" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M228 78 L150 126 L150 232 L228 184 Z" fill="#030d09" stroke="#1f8a4f" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M150 52 L194 108 L106 108 Z" fill="none" stroke="#7dffa0" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+            <rect x="122.5" y="89" width="55" height="6" rx="3" fill="url(#gGem)"/>
+            <path d="M150 34 l7 8 -7 8 -7 -8Z" fill="url(#gGold)"/>
+            <g stroke="rgba(125,255,160,.16)" stroke-width="1" fill="none">
+              <path d="M111 150 L150 172 L189 150"/>
+              <path d="M111 176 L150 198 L189 176"/>
+            </g>
+            <g fill="rgba(125,255,160,.5)">
+              <circle cx="111" cy="150" r="2"/><circle cx="189" cy="150" r="2"/><circle cx="150" cy="198" r="2"/>
+            </g>
+          </svg>
+        </div>
+        <div class="cap"><b>Isometric mark</b><span>Depth study · “3D” as a volume</span></div>
+      </div>
+
+      <div class="brandcard">
+        <div class="stagebox grid-bg">
+          <div style="text-align:center">
+            <div style="font-family:var(--display);font-size:40px;letter-spacing:.24em;color:#7dffa0;margin-bottom:6px">A E 3 D</div>
+            <div style="width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--line-2),transparent);margin:12px 0"></div>
+            <div style="font-size:11px;letter-spacing:.4em;color:var(--ink-3)">SOUSSI&nbsp;STUDIO</div>
+            <div class="swatches" style="justify-content:center">
+              <i style="background:#04140a"></i><i style="background:#0a1c12"></i><i style="background:#2ecc71"></i><i style="background:#7dffa0"></i><i style="background:#35f0ff"></i><i style="background:#ffd54a"></i><i style="background:#e9f7ec"></i>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><b>Monogram &amp; palette</b><span>Six-colour core palette</span></div>
+      </div>
+
+      <div class="brandcard">
+        <div class="stagebox">
+          <div class="sizes">
+            <figure><svg viewBox="0 0 200 200" style="width:96px" aria-hidden="true"><rect x="4" y="4" width="192" height="192" rx="46" fill="#04140a"/><path d="M100 48 L144 148 H56 Z" fill="none" stroke="url(#gMint)" stroke-width="15" stroke-linejoin="round"/><rect x="64" y="117.5" width="72" height="13" rx="6.5" fill="url(#gGem)"/><path d="M100 22 l9 11 -9 11 -9 -11 z" fill="url(#gGold)"/></svg><figcaption>96 px</figcaption></figure>
+            <figure><svg viewBox="0 0 200 200" style="width:48px" aria-hidden="true"><rect x="4" y="4" width="192" height="192" rx="46" fill="#04140a"/><path d="M100 48 L144 148 H56 Z" fill="none" stroke="url(#gMint)" stroke-width="20" stroke-linejoin="round"/><rect x="64" y="115.5" width="72" height="17" rx="8.5" fill="url(#gGem)"/></svg><figcaption>48 px</figcaption></figure>
+            <figure><svg viewBox="0 0 200 200" style="width:26px" aria-hidden="true"><rect x="4" y="4" width="192" height="192" rx="46" fill="#04140a"/><path d="M100 48 L144 148 H56 Z" fill="none" stroke="url(#gMint)" stroke-width="26" stroke-linejoin="round"/><rect x="64" y="113" width="72" height="22" rx="11" fill="url(#gGem)"/></svg><figcaption>26 px</figcaption></figure>
+          </div>
+        </div>
+        <div class="cap"><b>Responsive reduction</b><span>Details shed, silhouette kept</span></div>
+      </div>
+    </div>
+
+    <div class="grid g2 rv" style="margin-top:24px">
+      <div class="card">
+        <h3>Construction logic</h3>
+        <ul style="list-style:none;display:grid;gap:12px;margin-top:16px">
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--mint);font-family:var(--mono);font-size:12px">01</span> One triangle, three readings: canopy, peak, letterform.</li>
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--mint);font-family:var(--mono);font-size:12px">02</span> The cyan bar is the river — the only cool hue, and the only horizontal.</li>
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--mint);font-family:var(--mono);font-size:12px">03</span> The gold gem is the objective, the reward and the trophy — one shape, three narrative jobs.</li>
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--mint);font-family:var(--mono);font-size:12px">04</span> Round caps and joins everywhere: the mark reads as carved, not drawn.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Colour &amp; type</h3>
+        <div class="swatches" style="margin:18px 0 20px">
+          <i style="background:#04140a;width:64px;height:44px"></i>
+          <i style="background:#2ecc71;width:64px;height:44px"></i>
+          <i style="background:#7dffa0;width:64px;height:44px"></i>
+          <i style="background:#35f0ff;width:64px;height:44px"></i>
+          <i style="background:#ffd54a;width:64px;height:44px"></i>
+          <i style="background:#e9f7ec;width:64px;height:44px"></i>
+        </div>
+        <p style="font-size:13.5px;color:var(--ink-3)"><b style="color:var(--ink)">Display</b> — a transitional serif for titles and the wordmark: authored, timeless, slightly archaeological.<br><br><b style="color:var(--ink)">Interface</b> — a neutral grotesque, tracked out in uppercase for HUD and navigation. The HUD inherits the exact same type scale as this page.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="signatures">
+  <div class="wrap">
+    <div class="hd rv">
+      <span class="eyebrow"><span class="dot"></span>03 — Signatures</span>
+      <h2>Signed, sealed, drawn.</h2>
+      <p class="lede">Every project ships with a hand. This one is signed three ways: a <b>vector signature</b> that draws itself stroke by stroke, a <b>rotating wax seal</b> for provenance, and an <b>AI co-signature</b> that credits the machine that helped build it. Signatures here are geometry, not fonts — so they stay sharp at any size and never depend on a typeface being installed.</p>
+    </div>
+
+    <div class="sig-grid">
+      <div class="sigcard rv" id="sigCard">
+        <div class="sig-head">
+          <div>
+            <div class="ttl">Signature of record</div>
+            <div class="signame">Hazem Soussi</div>
+            <div class="muted" style="font-size:13.5px;margin-top:4px">Design &amp; engineering — Amazon Expedition 3D</div>
+          </div>
+          <div style="text-align:right">
+            <div class="ttl">Sealed</div>
+            <div style="font-family:var(--mono);font-size:13px;color:var(--gold);margin-top:6px">2026 · v1.0</div>
+          </div>
+        </div>
+        <div class="penwrap">
+          <svg class="sig-svg" viewBox="0 0 560 180" role="img" aria-label="Handwritten signature of Hazem Soussi">
+            <g>
+              <use href="#sigPath" class="sig-line" stroke="url(#gMint)" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <use href="#sigPath" class="sig-line" stroke="rgba(182,255,208,.45)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" style="filter:blur(5px);animation-delay:.06s"/>
+            </g>
+            <path d="M28 164 H516" fill="none" stroke="rgba(255,213,74,.32)" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="M524 158 l6 6 -6 6 -6 -6Z" fill="none" stroke="rgba(255,213,74,.5)" stroke-width="1.2"/>
+          </svg>
+        </div>
+        <dl class="sigmeta">
+          <div><dt>Role</dt><dd>Solo — concept, code, identity</dd></div>
+          <div><dt>Method</dt><dd>AI-assisted authoring &amp; review</dd></div>
+          <div><dt>Scope</dt><dd>Design, engineering, art direction</dd></div>
+        </dl>
+        <div class="aisign">
+          <svg class="mk" viewBox="0 0 64 64" role="img" aria-label="AI co-author mark">
+            <circle cx="32" cy="32" r="30" fill="rgba(53,240,255,.06)" stroke="rgba(53,240,255,.45)" stroke-width="1.6"/>
+            <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(53,240,255,.22)" stroke-width="1" stroke-dasharray="2 5"/>
+            <path d="M20 42 L32 18 L44 42" fill="none" stroke="#35f0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M25 35 H39" stroke="#35f0ff" stroke-width="2.4" stroke-linecap="round"/>
+            <circle cx="32" cy="48" r="2.6" fill="#ffd54a"/>
+          </svg>
+          <p><b>AI co-author</b> — generative tooling assisted with geometry, code review and this dossier's layout. Every value, curve and decision below was authored, tuned and verified by hand.</p>
+        </div>
+      </div>
+
+      <div class="sigcard rv" style="--i:1;display:flex;flex-direction:column;justify-content:center">
+        <div class="sig-head" style="margin-bottom:0">
+          <div>
+            <div class="ttl">Provenance seal</div>
+            <div class="signame" style="font-size:20px">Made in the canopy</div>
+          </div>
+        </div>
+        <div class="seal">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Rotating provenance seal">
+            <circle cx="100" cy="100" r="96" fill="none" stroke="rgba(255,213,74,.28)" stroke-width="1.5"/>
+            <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(46,204,113,.35)" stroke-width="1.5"/>
+            <g class="spin">
+              <text font-family="Inter,Segoe UI,Arial,sans-serif" font-size="10.4" font-weight="700" letter-spacing="2.6" fill="#7dffa0">
+                <textPath href="#arcSeal" startOffset="0">DESIGNED · ENGINEERED · SHIPPED · HAZEM SOUSSI ·</textPath>
+              </text>
+            </g>
+            <circle cx="100" cy="100" r="66" fill="url(#gDisc)" stroke="rgba(125,255,160,.3)" stroke-width="1.5"/>
+            <path d="M100 60 L128 126 H72 Z" fill="none" stroke="url(#gMint)" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+            <rect x="77" y="109.5" width="46" height="7" rx="3.5" fill="url(#gGem)"/>
+            <path d="M100 42 l6 7 -6 7 -6 -7Z" fill="url(#gGold)"/>
+            <text x="100" y="152" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="9" letter-spacing="3" text-anchor="middle" fill="rgba(255,255,255,.5)">EST. 2026</text>
+          </svg>
+        </div>
+        <div class="mono-box" style="margin-top:6px">
+          <div><b>DOC</b> AE3D-DOSSIER-001</div>
+          <div><b>REV</b> <span class="g">1.0</span> &nbsp;·&nbsp; <b>STATUS</b> RELEASED</div>
+          <div><b>SIG</b> H.SOUSSI / AI-COSIGN</div>
+          <div><b>HASH</b> <span class="c">a3f0-7c21-9e44-b8d2</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="systems">
+  <div class="wrap">
+    <div class="hd rv">
+      <span class="eyebrow"><span class="dot"></span>04 — Systems</span>
+      <h2>Five systems, one file.</h2>
+      <p class="lede">The world is only convincing because five small systems hold hands. Each is self-contained, each is readable, and each can be replaced without touching the others.</p>
+    </div>
+
+    <div class="tabs rv" role="tablist" aria-label="Systems">
+      <button role="tab" aria-selected="true" data-t="0">Terrain &amp; worldgen</button>
+      <button role="tab" aria-selected="false" data-t="1">Movement &amp; physics</button>
+      <button role="tab" aria-selected="false" data-t="2">Wildlife</button>
+      <button role="tab" aria-selected="false" data-t="3">HUD &amp; minimap</button>
+      <button role="tab" aria-selected="false" data-t="4">Audio &amp; feedback</button>
+    </div>
+
+    <div class="panelbox rv" id="sysBox">
+      <div class="txt">
+        <h3 id="sysTitle">Terrain &amp; worldgen</h3>
+        <ul id="sysList"></ul>
+      </div>
+      <pre id="sysCode"></pre>
+    </div>
+
+    <div class="grid g3" style="margin-top:24px">
+      <article class="card fcard rv tilt" style="--i:0">
+        <span class="no">01</span>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 18 9 8l5 6 3-4 4 8z"/><path d="M3 21h18"/></svg></div>
+        <h3>Analytic heightfield</h3>
+        <p>Three stacked sine fields produce the hills, a windowed falloff carves the river, and a radial ramp lifts the temple mound — one pure function, called for terrain build, object placement and player grounding alike.</p>
+      </article>
+      <article class="card fcard rv tilt" style="--i:1">
+        <span class="no">02</span>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Closed-form wildlife</h3>
+        <p>No AI, no pathfinding, no state machines. Each creature is a parametric orbit with a phase, a radius and a speed — and a butterfly lands on the terrain because it asks the same height function the ground does.</p>
+      </article>
+      <article class="card fcard rv tilt" style="--i:2">
+        <span class="no">03</span>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 18h16"/><path d="M7 18V8l5-4 5 4v10"/><path d="M10 18v-5h4v5"/></svg></div>
+        <h3>Survival economy</h3>
+        <p>Energy is a single scalar with two drains (sprint, wading) and one restore (rest). It is the only resource in the game, which makes every route a legible trade-off instead of a puzzle.</p>
+      </article>
+      <article class="card fcard rv tilt" style="--i:3">
+        <span class="no">04</span>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/></svg></div>
+        <h3>Canvas-2D radar</h3>
+        <p>A second, entirely separate renderer draws the minimap: river band, tree scatter, live pickups and a rotating player arrow. Different API, same source of truth, refreshed every frame.</p>
+      </article>
+      <article class="card fcard rv tilt" style="--i:4">
+        <span class="no">05</span>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg></div>
+        <h3>Synthesised feedback</h3>
+        <p>Every sound is an oscillator with an exponential gain ramp: 880 Hz rises to 1320 Hz on a gem, a three-note figure plays on victory. Zero bytes of audio, instant latency.</p>
+      </article>
+      <article class="card fcard rv tilt" style="--i:5">
+        <span class="no">06</span>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div>
+        <h3>Light &amp; atmosphere</h3>
+        <p>Hemisphere fill plus one directional key at 2048² soft shadows, exponential fog tinted to the canopy, and a bobbing camera that breathes with the player's stride.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="dimension">
+  <div class="wrap">
+    <div class="hd rv">
+      <span class="eyebrow"><span class="dot"></span>05 — Dimension</span>
+      <h2>Depth as a design decision.</h2>
+      <p class="lede">A 3D game deserves a 3D argument. The stack on the right is separated by distance, not by borders: the player is on the bottom plate, the world generation above it, the renderer above that, and the interface floating highest — exactly the order in which a frame is built. Move your cursor across it.</p>
+    </div>
+
+    <div class="stackwrap">
+      <div class="scene rv" id="scene">
+        <div class="scene-in" id="sceneIn">
+          <div class="plate3d" style="transform:translateY(-160px) translateZ(140px)"><span class="nm">Interface</span><span class="vl">HTML · CSS · Canvas 2D</span><span class="bar"></span><span class="dot"></span><i></i></div>
+          <div class="plate3d" style="transform:translateY(-120px) translateZ(105px)"><span class="nm">Simulation</span><span class="vl">update(dt)</span><span class="bar"></span><span class="dot"></span><i></i></div>
+          <div class="plate3d" style="transform:translateY(-80px) translateZ(70px)"><span class="nm">Worldgen</span><span class="vl">terrainH(x,z)</span><span class="bar"></span><span class="dot"></span><i></i></div>
+          <div class="plate3d" style="transform:translateY(-40px) translateZ(35px)"><span class="nm">Render</span><span class="vl">WebGL · Three.js</span><span class="bar"></span><span class="dot"></span><i></i></div>
+          <div class="plate3d" style="background:linear-gradient(150deg,rgba(255,213,74,.12),rgba(4,10,7,.92));border-color:rgba(255,213,74,.3)"><span class="nm">Player</span><span class="vl" style="color:var(--gold)">EYE 1.7</span><span class="bar" style="background:linear-gradient(90deg,rgba(255,213,74,.28),transparent)"></span></div>
+        </div>
+      </div>
+
+      <ol class="layer-list rv" style="--i:1">
+        <li><span class="ix">00</span><div><b>Player layer</b><span>Position, velocity, energy, inventory. The only object the game mutates directly.</span></div><em>z −50</em></li>
+        <li><span class="ix">01</span><div><b>Render layer</b><span>WebGL context, shadow map, exponential fog, and the single render call per frame.</span></div><em>z 0</em></li>
+        <li><span class="ix">02</span><div><b>Worldgen layer</b><span>One height function consumed by terrain, placement, wildlife and physics — the spine of the project.</span></div><em>z 50</em></li>
+        <li><span class="ix">03</span><div><b>Simulation layer</b><span>Delta-time update: input, physics, collision push-out, animation, win conditions.</span></div><em>z 100</em></li>
+        <li><span class="ix">04</span><div><b>Interface layer</b><span>HUD, energy bar, hints, overlays and a live canvas minimap drawn on the same tick.</span></div><em>z 150</em></li>
+      </ol>
+    </div>
+
+    <div class="grid g2 rv" style="margin-top:34px">
+      <div class="card">
+        <h3>Player experience</h3>
+        <ul style="list-style:none;display:grid;gap:12px;margin-top:16px">
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">WASD</span> Movement relative to facing, normalised so diagonals don't outrun the frame rate.</li>
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">Mouse</span> Pointer lock with pitch clamping; releasing the lock pauses the game automatically.</li>
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">Shift</span> Sprint at 12 u/s against a 7.5 u/s walk, paid for in energy.</li>
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">Space</span> 8.5 u/s impulse against 22 u/s² gravity, with grounded state tracking.</li>
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">E</span> Context pickup — nearest gem first, then the idol, resolved by distance.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Objective chain</h3>
+        <div class="loop" style="grid-template-columns:1fr;margin-top:6px">
+          <div class="step" style="padding:16px 18px"><div class="k">01</div><h4>Land at the boat</h4><p>Start on the southern shore with a full energy bar and an empty pack.</p></div>
+          <div class="step" style="padding:16px 18px"><div class="k">02</div><h4>Hunt the 10 gems</h4><p>Scattered, glowing, worth 10 points and a small energy refund each.</p></div>
+          <div class="step" style="padding:16px 18px"><div class="k">03</div><h4>Cross the great river</h4><p>Wading drains energy — commit to the crossing or walk the long way.</p></div>
+          <div class="step" style="padding:16px 18px"><div class="k">04</div><h4>Take the Golden Idol</h4><p>The temple at the far end, lit by its own point light. Worth 50.</p></div>
+          <div class="step" style="padding:16px 18px"><div class="k">05</div><h4>Run home</h4><p>Return the idol to the boat for the final 40 points and the victory overlay.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="stack">
+  <div class="wrap">
+    <div class="hd rv">
+      <span class="eyebrow"><span class="dot"></span>06 — Craft</span>
+      <h2>What the build is made of.</h2>
+      <p class="lede">No framework, no bundler, no package manager. The dependency graph fits in one sentence — and that constraint is the reason the code stayed readable enough to ship in a single sitting.</p>
+    </div>
+
+    <div class="grid g2">
+      <div class="card rv">
+        <h3>Runtime</h3>
+        <div class="skills" style="margin-top:20px">
+          <span class="skill"><i></i>HTML5</span>
+          <span class="skill"><i></i>CSS3 · custom properties</span>
+          <span class="skill"><i></i>Vanilla JavaScript</span>
+          <span class="skill"><i></i>Three.js r128</span>
+          <span class="skill b"><i></i>WebGL</span>
+          <span class="skill b"><i></i>Canvas 2D</span>
+          <span class="skill a"><i></i>Web Audio API</span>
+          <span class="skill a"><i></i>Pointer Lock API</span>
+          <span class="skill"><i></i>requestAnimationFrame</span>
+        </div>
+      </div>
+      <div class="card rv" style="--i:1">
+        <h3>Capabilities demonstrated</h3>
+        <div class="skills" style="margin-top:20px">
+          <span class="skill"><i></i>Procedural terrain</span>
+          <span class="skill"><i></i>Real-time 3D</span>
+          <span class="skill b"><i></i>Collision push-out</span>
+          <span class="skill b"><i></i>Delta-time physics</span>
+          <span class="skill a"><i></i>Game loop architecture</span>
+          <span class="skill a"><i></i>State &amp; quest design</span>
+          <span class="skill"><i></i>Shadow &amp; fog lighting</span>
+          <span class="skill b"><i></i>Procedural audio</span>
+          <span class="skill a"><i></i>HUD information design</span>
+          <span class="skill"><i></i>SVG identity design</span>
+          <span class="skill b"><i></i>CSS 3D &amp; motion</span>
+          <span class="skill a"><i></i>Technical writing</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g4 rv" style="margin-top:20px">
+      <div class="stat"><div class="n" style="font-size:30px"><span data-count="2048">0</span><span style="font-size:16px;color:var(--ink-3)">²</span></div><div class="l">Shadow map</div><div class="s">PCF soft shadows on a single directional key light.</div></div>
+      <div class="stat b"><div class="n" style="font-size:30px"><span data-count="420">0</span></div><div class="l">World units wide</div><div class="s">A 210-unit radius, hard-clamped at the treeline.</div></div>
+      <div class="stat e"><div class="n" style="font-size:30px"><span data-count="0.05" data-dec="2">0</span><span style="font-size:16px;color:var(--ink-3)">s</span></div><div class="l">Frame clamp</div><div class="s">Delta time is capped so a stalled tab can't teleport the player.</div></div>
+      <div class="stat g"><div class="n" style="font-size:30px"><span data-count="4">0</span></div><div class="l">Files shipped</div><div class="s">One game file, one vendored runtime, one dossier, one readme.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <div class="hd rv">
+      <span class="eyebrow"><span class="dot"></span>07 — Roadmap</span>
+      <h2>Where the jungle goes next.</h2>
+      <p class="lede">v1.0 is done and playable. The next passes deepen the systems that already exist rather than bolting on new ones.</p>
+    </div>
+    <div class="road rv">
+      <article data-s="shipped">
+        <h4>v1.0 — First light <span class="tag">Shipped</span></h4>
+        <p>Full jungle, river crossing, temple ruins, Golden Idol quest, 10 gems, energy system, wildlife, minimap, victory state. Playable end to end in a single HTML file.</p>
+      </article>
+      <article data-s="next">
+        <h4>v1.1 — Weather &amp; time of day <span class="tag g">Next</span></h4>
+        <p>A sun-and-moon cycle driving the directional light and sky colour, plus a rain state that increases wading drain and populates the canopy. The lighting rig is already built for it.</p>
+      </article>
+      <article data-s="next">
+        <h4>v1.2 — Camp &amp; inventory <span class="tag g">Next</span></h4>
+        <p>Placeable campfires that restore energy faster, and a small inventory so gems become tradeable rather than purely score-bearing. Both reuse the existing collider and pickup systems.</p>
+      </article>
+      <article data-s="idea">
+        <h4>v1.3 — Wildlife depth <span class="tag b">Planned</span></h4>
+        <p>Replace fixed orbits with steering behaviours, add riverbank fish and night insects, and let monkeys react to the player when the idol leaves its pedestal.</p>
+      </article>
+      <article data-s="idea">
+        <h4>v2.0 — WebGPU &amp; co-op <span class="tag b">Speculative</span></h4>
+        <p>Migrate the renderer to a modern pipeline for instanced foliage and cascaded shadows, then open the world to two-player local co-op. This is an ambition, not a commitment.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="credits">
+  <div class="wrap">
+    <div class="hd rv">
+      <span class="eyebrow"><span class="dot"></span>08 — Sign-off</span>
+      <h2>Credits &amp; sign-off.</h2>
+      <p class="lede">The project in full, and the people and machines credited for it.</p>
+    </div>
+
+    <div class="signoff">
+      <div class="sobox rv">
+        <div class="ttl" style="font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-3)">Credits</div>
+        <h3 style="margin-top:14px">Amazon Expedition 3D</h3>
+        <dl class="dl">
+          <dt>Design</dt><dd>Hazem Soussi</dd>
+          <dt>Engineering</dt><dd>Hazem Soussi</dd>
+          <dt>Art direction</dt><dd>Hazem Soussi — all geometry procedural</dd>
+          <dt>Identity &amp; type</dt><dd>In-house SVG system, this dossier</dd>
+          <dt>Technology</dt><dd>Three.js r128, WebGL, Web Audio, Pointer Lock</dd>
+          <dt>Assistance</dt><dd>AI-assisted authoring and code review</dd>
+          <dt>Assets</dt><dd>None — 100% generated at runtime</dd>
+        </dl>
+        <div class="mono-box">
+          <div><b>FILES</b> amazon_3d.html · showcase.html · three.min.js · README.md</div>
+          <div><b>SIZE</b> <span class="g">26 KB</span> game logic, <span class="c">603 KB</span> vendored runtime</div>
+          <div><b>DEPS</b> one · Three.js r128</div>
+          <div><b>BUILD</b> none · open the file</div>
+        </div>
+      </div>
+
+      <div class="sobox rv" style="--i:1">
+        <div class="ttl" style="font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-3)">Signature</div>
+        <svg class="sig-svg" viewBox="0 0 560 180" style="margin-top:18px" role="img" aria-label="Signature of Hazem Soussi">
+          <g>
+            <use href="#sigPath" class="sig-line" stroke="url(#gMint)" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </g>
+        </svg>
+        <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:18px">
+          <div class="signame" style="font-size:24px">Hazem Soussi</div>
+          <div class="muted" style="font-size:13.5px;margin-top:4px">Creator &amp; signatory — Amazon Expedition 3D</div>
+        </div>
+        <dl class="sigmeta" style="margin-top:24px">
+          <div><dt>Date</dt><dd>2026</dd></div>
+          <div><dt>Version</dt><dd>1.0 · released</dd></div>
+          <div><dt>Status</dt><dd>Signed &amp; sealed</dd></div>
+        </dl>
+        <p class="muted" style="font-size:13px;margin-top:26px;line-height:1.7">Signatures, seals and marks in this document are original vector artwork created for this project. Copyright © 2026 Hazem Soussi. All rights reserved. Amazon Expedition 3D is a fan-made concept; it is not affiliated with any publisher or jungle documentary.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <p>© 2026 Hazem Soussi — Amazon Expedition 3D. Designed, engineered and signed with AI-assisted tooling.</p>
+    <div class="r">
+      <a class="btn btn-g" href="amazon_3d.html" style="padding:10px 18px;font-size:13px"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Play</a>
+      <a class="totop" href="#top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Top</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* progress + sticky nav */
+var bar = document.getElementById('bar'), nav = document.getElementById('nav');
+function onScroll(){
+  var h = document.documentElement.scrollHeight - innerHeight;
+  bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + "%";
+  nav.classList.toggle('stuck', scrollY > 24);
+}
+addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+/* mobile menu */
+var burger = document.getElementById('burger'), links = document.getElementById('links');
+burger.addEventListener('click', function(){
+  var open = links.classList.toggle('open');
+  burger.classList.toggle('x', open);
+  burger.setAttribute('aria-expanded', open);
+});
+links.addEventListener('click', function(e){
+  if (e.target.tagName === 'A'){ links.classList.remove('open'); burger.classList.remove('x'); }
+});
+
+/* reveal + counters + signature draw */
+function countUp(el){
+  el.querySelectorAll('[data-count]').forEach(function(n){
+    if (n.dataset.done) return; n.dataset.done = "1";
+    var to = parseFloat(n.dataset.count), dec = parseInt(n.dataset.dec || '0', 10), t0 = null;
+    function step(ts){
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / (reduce ? 1 : 1400));
+      var e2 = 1 - Math.pow(1 - p, 3), v = to * e2;
+      n.textContent = n.dataset.fmt === 'comma'
+        ? Math.round(v).toLocaleString('en-US')
+        : v.toFixed(dec);
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}
+function reveal(el){
+  if (el.classList.contains('in')) return;
+  el.classList.add('in');
+  countUp(el);
+  io.unobserve(el);
+}
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(en){ if (en.isIntersecting) reveal(en.target); });
+}, {threshold:.14, rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+
+/* safety net: a hash jump or a fast flick can skip the observer entirely */
+var pending;
+addEventListener('scroll', function(){
+  if (pending) return;
+  pending = requestAnimationFrame(function(){
+    pending = null;
+    var rest = document.querySelectorAll('.rv:not(.in)');
+    for (var i = 0; i < rest.length; i++){
+      if (rest[i].getBoundingClientRect().top < innerHeight * .95) reveal(rest[i]);
+    }
+  });
+}, {passive:true});
+
+var sigIO = new IntersectionObserver(function(entries){
+  entries.forEach(function(en){
+    if (en.isIntersecting && !en.target.dataset.drawn){
+      en.target.dataset.drawn = "1";
+      en.target.querySelectorAll('.sig-line').forEach(function(p){
+        p.style.strokeDasharray = "1"; p.style.strokeDashoffset = "1";
+        p.getBoundingClientRect();
+        p.style.transition = "stroke-dashoffset 2.6s cubic-bezier(.55,0,.25,1)";
+        p.style.strokeDashoffset = "0";
+      });
+    }
+  });
+}, {threshold:.35});
+document.querySelectorAll('.penwrap, .sobox').forEach(function(el){ sigIO.observe(el); });
+
+/* hero parallax */
+var plate = document.getElementById('plate');
+var layers = [['lay-near',18],['lay-mid',34],['lay-far',62]];
+if (!reduce && matchMedia('(pointer:fine)').matches){
+  var hero = document.querySelector('.hero'), tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
+  hero.addEventListener('pointermove', function(e){
+    var r = hero.getBoundingClientRect();
+    tx = ((e.clientX - r.left) / r.width - .5) * 2;
+    ty = ((e.clientY - r.top) / r.height - .5) * 2;
+    if (!raf) raf = requestAnimationFrame(loop);
+  });
+  hero.addEventListener('pointerleave', function(){ tx = 0; ty = 0; if (!raf) raf = requestAnimationFrame(loop); });
+  function loop(){
+    cx += (tx - cx) * .06; cy += (ty - cy) * .06;
+    plate.style.transform = "rotateY(" + (cx * 13) + "deg) rotateX(" + (-cy * 11) + "deg) translateZ(0)";
+    layers.forEach(function(l){ document.getElementById(l[0]).style.transform = "translateY(" + (cy * l[1] * -.28) + "px) translateX(" + (cx * l[1] * .12) + "px)"; });
+    if (Math.abs(tx - cx) > .001 || Math.abs(ty - cy) > .001) raf = requestAnimationFrame(loop); else raf = null;
+  }
+}
+
+/* card tilt */
+document.querySelectorAll('.tilt').forEach(function(c){
+  c.addEventListener('pointermove', function(e){
+    var r = c.getBoundingClientRect();
+    var px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
+    c.style.transform = "perspective(900px) rotateY(" + (px * 9) + "deg) rotateX(" + (-py * 9) + "deg) translateY(-6px)";
+  });
+  c.addEventListener('pointerleave', function(){ c.style.transform = ""; });
+});
+
+/* 3d stack tilt */
+var scene = document.getElementById('scene'), sceneIn = document.getElementById('sceneIn');
+if (scene && !reduce){
+  var srx = -13, sry = 20, tgx = -13, tgy = 20, sRaf = null;
+  sceneIn.style.transform = "rotateX(" + srx + "deg) rotateY(" + sry + "deg)";
+  function sloop(){
+    srx += (tgx - srx) * .07; sry += (tgy - sry) * .07;
+    sceneIn.style.transform = "rotateX(" + srx + "deg) rotateY(" + sry + "deg)";
+    if (Math.abs(tgy - sry) > .05 || Math.abs(tgx - srx) > .05) sRaf = requestAnimationFrame(sloop); else sRaf = null;
+  }
+  scene.addEventListener('pointermove', function(e){
+    var r = scene.getBoundingClientRect();
+    tgy = ((e.clientX - r.left) / r.width - .5) * 40;
+    tgx = -13 - ((e.clientY - r.top) / r.height - .5) * 22;
+    if (!sRaf) sRaf = requestAnimationFrame(sloop);
+  });
+  scene.addEventListener('pointerleave', function(){ tgx = -13; tgy = 20; if (!sRaf) sRaf = requestAnimationFrame(sloop); });
+}
+
+/* systems tabs */
+var SYS = [
+  {
+    t:'Terrain &amp; worldgen',
+    l:['<b>One function, four consumers</b> — terrain mesh, prop placement, wildlife altitude and player grounding all call <code>terrainH(x,z)</code>.',
+       '<b>Layered sines</b> at three frequencies give large landforms plus surface detail without a single texture.',
+       '<b>Windowed river carve</b> with smooth banks; a radial ramp lifts the temple mound so the goal reads on the horizon.',
+       '<b>Normals recomputed once</b> after displacement, then frozen for the life of the build.'],
+    c:'<span class="c">// heightfield: hills, river, temple mound</span>\n'+
+       '<span class="k">function</span> <span class="f">terrainH</span>(x, z){\n'+
+       '  <span class="k">let</span> h = <span class="n">3</span>*Math.<span class="f">sin</span>(x*<span class="n">0.02</span>)*Math.<span class="f">cos</span>(z*<span class="n">0.02</span>)\n'+
+       '        + <span class="n">1.6</span>*Math.<span class="f">sin</span>(x*<span class="n">0.06</span>+<span class="n">2</span>)*Math.<span class="f">sin</span>(z*<span class="n">0.05</span>)\n'+
+       '        + <span class="n">0.7</span>*Math.<span class="f">sin</span>(x*<span class="n">0.13</span>)*Math.<span class="f">cos</span>(z*<span class="n">0.11</span>);\n\n'+
+       '  <span class="c">// carve the river channel</span>\n'+
+       '  <span class="k">if</span> (z &gt; RIVER_Z1 &amp;&amp; z &lt; RIVER_Z2){\n'+
+       '    <span class="k">const</span> d = Math.<span class="f">min</span>(<span class="n">1</span>, (Math.<span class="f">min</span>(z-RIVER_Z1, RIVER_Z2-z)/<span class="n">6</span> + <span class="n">0.15</span>));\n'+
+       '    h = -<span class="n">2.6</span>*d + h*<span class="n">0.15</span>;\n'+
+       '  }\n\n'+
+       '  <span class="c">// raise the temple mound</span>\n'+
+       '  <span class="k">const</span> dr = Math.<span class="f">hypot</span>(x, z+<span class="n">120</span>);\n'+
+       '  <span class="k">if</span> (dr &lt; <span class="n">26</span>) h = h*(dr/<span class="n">26</span>) + <span class="n">0.5</span>*(<span class="n">1</span>-dr/<span class="n">26</span>);\n'+
+       '  <span class="k">return</span> h;\n}'
+  },
+  {
+    t:'Movement &amp; physics',
+    l:['<b>Facing-relative input</b> — forward and strafe are rotated by yaw, then normalised so diagonals don\'t cheat.',
+       '<b>Impulse jump</b> against constant gravity with an explicit grounded flag, so you can\'t double-jump.',
+       '<b>Push-out collision</b> against circular colliders: find the penetration depth, displace along the normal, keep the stride.',
+       '<b>Delta clamped</b> at 50&nbsp;ms so a backgrounded tab never teleports the player through the jungle.'],
+    c:'<span class="c">// input → world velocity, normalised</span>\n'+
+       '<span class="k">const</span> sin = Math.<span class="f">sin</span>(player.yaw), cos = Math.<span class="f">cos</span>(player.yaw);\n'+
+       '<span class="k">let</span> vx = (-sin*fwd + cos*strafe);\n'+
+       '<span class="k">let</span> vz = (-cos*fwd - sin*strafe);\n'+
+       '<span class="k">const</span> l = Math.<span class="f">hypot</span>(vx, vz);\n'+
+       'vx = vx/l*speed; vz = vz/l*speed;\n\n'+
+       '<span class="c">// jump, gravity, ground clamp</span>\n'+
+       '<span class="k">if</span> (keys.Space &amp;&amp; player.onGround){\n'+
+       '  player.vel.y = JUMP; player.onGround = <span class="k">false</span>;\n'+
+       '}\n'+
+       'player.vel.y -= GRAV*dt;\n\n'+
+       '<span class="c">// push out of tree &amp; pillar colliders</span>\n'+
+       '<span class="k">const</span> push = <span class="f">collide</span>(nx, nz);\n'+
+       '<span class="k">if</span> (push){ nx += push.x; nz += push.z; }\n\n'+
+       '<span class="c">// wading is slow and tiring</span>\n'+
+       '<span class="k">if</span> (wading) player.energy -= dt*<span class="n">0.8</span>;'
+  },
+  {
+    t:'Wildlife',
+    l:['<b>Parametric orbits</b> — each creature stores a centre, a radius, a phase and a speed. Position is a function of elapsed time.',
+       '<b>Butterflies read the ground</b> so they never float over a hill or sink into a valley.',
+       '<b>Wing beats</b> come from a sine offset by each individual\'s phase, so a flock never moves in lockstep.',
+       '<b>Monkeys hop</b> on a separate frequency from their travel, producing an organic arc instead of a slide.'],
+    c:'<span class="c">// birds: orbit + flap, no state machine</span>\n'+
+       '<span class="k">for</span> (<span class="k">const</span> b <span class="k">of</span> birds){\n'+
+       '  <span class="k">const</span> u = b.userData;\n'+
+       '  u.a += dt*u.sp;\n'+
+       '  b.position.<span class="f">set</span>(\n'+
+       '    u.cx + Math.<span class="f">cos</span>(u.a)*u.r,\n'+
+       '    u.h + Math.<span class="f">sin</span>(u.a*<span class="n">3</span>)*<span class="n">2</span>,\n'+
+       '    u.cz + Math.<span class="f">sin</span>(u.a)*u.r);\n'+
+       '  b.rotation.y = -u.a;\n'+
+       '  <span class="k">const</span> flap = Math.<span class="f">sin</span>(t*<span class="n">10</span> + u.a*<span class="n">5</span>)*<span class="n">0.6</span>;\n'+
+       '  u.wl.rotation.z = flap; u.wr.rotation.z = -flap;\n'+
+       '}\n\n'+
+       '<span class="c">// butterflies hug the heightfield</span>\n'+
+       'bf.position.y = <span class="f">terrainH</span>(bf.position.x, bf.position.z)\n'+
+       '                + u.h + Math.<span class="f">sin</span>(t*<span class="n">3</span>+u.a)*<span class="n">0.4</span>;'
+  },
+  {
+    t:'HUD &amp; minimap',
+    l:['<b>Second renderer</b> — the minimap is a separate 2D context sharing the same coordinates, redrawn every tick.',
+       '<b>Layered radar</b> — river band, tree scatter, live gem dots, the idol marker, and a yaw-rotated player arrow.',
+       '<b>Contextual hints</b> are distance-triggered and self-dismissing, so the screen never fills with instructions.',
+       '<b>Auto-pause</b> fires the moment pointer lock is lost, because players will alt-tab.'],
+    c:'<span class="c">// live radar, canvas 2D</span>\n'+
+       '<span class="k">const</span> scale = (S/2)/WORLD;\n'+
+       'mm.<span class="f">fillStyle</span> = <span class="s">\'rgba(10,40,15,0.75)\'</span>;\n'+
+       'mm.<span class="f">fillRect</span>(<span class="n">0</span>,<span class="n">0</span>,S,S);\n\n'+
+       '<span class="c">// uncollected gems</span>\n'+
+       '<span class="k">for</span> (<span class="k">const</span> g <span class="k">of</span> gems){\n'+
+       '  <span class="k">if</span> (g.taken) <span class="k">continue</span>;\n'+
+       '  mm.<span class="f">beginPath</span>();\n'+
+       '  mm.<span class="f">arc</span>(half+g.x*scale, half+g.z*scale, <span class="n">2.5</span>, <span class="n">0</span>, <span class="n">7</span>);\n'+
+       '  mm.<span class="f">fill</span>();\n'+
+       '}\n\n'+
+       '<span class="c">// player arrow, rotated to yaw</span>\n'+
+       'mm.<span class="f">save</span>(); mm.<span class="f">translate</span>(px, pz);\n'+
+       'mm.<span class="f">rotate</span>(-player.yaw + Math.PI);\n'+
+       'mm.<span class="f">moveTo</span>(<span class="n">0</span>,-<span class="n">5</span>); mm.<span class="f">lineTo</span>(<span class="n">3.5</span>,<span class="n">4</span>); mm.<span class="f">lineTo</span>(-<span class="n">3.5</span>,<span class="n">4</span>);\n'+
+       'mm.<span class="f">closePath</span>(); mm.<span class="f">fill</span>(); mm.<span class="f">restore</span>();'
+  },
+  {
+    t:'Audio &amp; feedback',
+    l:['<b>Oscillator + gain ramp</b> is the entire sound engine. One function, five call sites, no audio files.',
+       '<b>Pitch is meaning</b> — pickups rise a tone, the idol is a slow fifth, victory is a three-note figure.',
+       '<b>Lazy AudioContext</b> is created on first interaction, so no browser ever blocks playback with a warning.',
+       '<b>Visual echo</b> — every audio cue has a matching HUD change: bar jump, score tick, overlay.'],
+    c:'<span class="c">// the whole sound engine</span>\n'+
+       '<span class="k">function</span> <span class="f">sfx</span>(freq, dur, type){\n'+
+       '  <span class="k">try</span> {\n'+
+       '    <span class="k">if</span> (!AC) AC = <span class="k">new</span> (window.AudioContext || window.webkitAudioContext)();\n'+
+       '    <span class="k">const</span> o = AC.<span class="f">createOscillator</span>(), g = AC.<span class="f">createGain</span>();\n'+
+       '    o.type = type || <span class="s">\'sine\'</span>;\n'+
+       '    o.frequency.value = freq;\n'+
+       '    g.gain.<span class="f">setValueAtTime</span>(<span class="n">0.15</span>, AC.currentTime);\n'+
+       '    g.gain.<span class="f">exponentialRampToValueAtTime</span>(<span class="n">0.001</span>, AC.currentTime + dur);\n'+
+       '    o.<span class="f">connect</span>(g).<span class="f">connect</span>(AC.destination);\n'+
+       '    o.<span class="f">start</span>(); o.<span class="f">stop</span>(AC.currentTime + dur);\n'+
+       '  } <span class="k">catch</span>(e){}\n'+
+       '}\n\n'+
+       '<span class="c">// gem pickup: rising fifth</span>\n'+
+       '<span class="f">sfx</span>(<span class="n">880</span>, <span class="n">0.12</span>);\n'+
+       'setTimeout(()=&gt;<span class="f">sfx</span>(<span class="n">1320</span>, <span class="n">0.15</span>), <span class="n">90</span>);'
+  }
+];
+var box = document.getElementById('sysBox'),
+    sysTitle = document.getElementById('sysTitle'),
+    sysList = document.getElementById('sysList'),
+    sysCode = document.getElementById('sysCode'),
+    tabBtns = Array.prototype.slice.call(document.querySelectorAll('.tabs button'));
+function paintSys(i){
+  var d = SYS[i];
+  sysTitle.innerHTML = d.t;
+  sysList.innerHTML = d.l.map(function(x){ return "<li>" + x + "</li>"; }).join("");
+  sysCode.innerHTML = d.c;
+  box.animate
+    ? box.animate([{opacity:.35, transform:'translateY(10px)'},{opacity:1, transform:'none'}], {duration:420, easing:'cubic-bezier(.16,1,.3,1)'})
+    : 0;
+}
+tabBtns.forEach(function(b){
+  b.addEventListener('click', function(){
+    tabBtns.forEach(function(o){ o.setAttribute('aria-selected', o === b); });
+    paintSys(+b.dataset.t);
+  });
+});
+paintSys(0);
+
+/* scroll spy */
+var secs = Array.prototype.slice.call(document.querySelectorAll('section[id]'));
+var spy = new IntersectionObserver(function(entries){
+  entries.forEach(function(en){
+    if (!en.isIntersecting) return;
+    var id = '#' + en.target.id;
+    document.querySelectorAll('.links a').forEach(function(a){
+      a.classList.toggle('on', a.getAttribute('href') === id);
+    });
+  });
+}, {rootMargin:'-45% 0px -50% 0px'});
+secs.forEach(function(s){ spy.observe(s); });
+
+/* magnetic buttons */
+if (!reduce && matchMedia('(pointer:fine)').matches){
+  document.querySelectorAll('.btn').forEach(function(b){
+    b.addEventListener('pointermove', function(e){
+      var r = b.getBoundingClientRect();
+      var dx = (e.clientX - (r.left + r.width/2)) / r.width * 8;
+      var dy = (e.clientY - (r.top + r.height/2)) / r.height * 6;
+      b.style.transform = "translate(" + dx + "px," + dy + "px)";
+    });
+    b.addEventListener('pointerleave', function(){ b.style.transform = ""; });
+  });
+}
+
+/* pointer-reactive glow on cards */
+document.querySelectorAll('.card').forEach(function(c){
+  c.addEventListener('pointermove', function(e){
+    var r = c.getBoundingClientRect();
+    c.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + "%");
+    c.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + "%");
+  });
+});
+})();
+</script>
+</body>
+</html>
