@@ -59,7 +59,7 @@ Requires: any modern browser with WebGL, plus `three.min.js` (vendored, r128) if
 - **Survival economy** — sprinting and wading drain energy; resting restores it
 - **A full quest loop** — temple → Golden Idol → return it to the boat, plus 10 hidden gems, score and a win state
 - **Canvas-2D minimap with teammate dots**, HUD design, procedural Web Audio SFX, SVG logo and identity system
-- **One file.** 1127 lines of shippable code, plus one vendored runtime.
+- **One file.** 1219 lines of shippable code, plus one vendored runtime.
 
 ---
 
@@ -70,21 +70,21 @@ Everything lives in [`amazon_3d.html`](amazon_3d.html), in reading order:
 | Lines | Section | What lives there |
 | --- | --- | --- |
 | 95 | setup | renderer, PCF soft shadows, fog, camera, lights |
-| 127 | terrain | `terrainH(x, z)` — the analytic heightfield, river, water plane |
-| 196 | vegetation & rocks | tree / rock / grass placement, collision list, minimap data |
-| 276 | atmosphere | procedural mist, fireflies, distant ridges, canopy overhead |
-| 357 | ruins & idol | temple geometry, pedestal, Golden Idol, its glow light |
-| 406 | expedition boat | the finish point and win state |
-| 433 | gems | the ten collectibles |
-| 456 | wildlife | birds, butterflies, monkeys — parametric, no animation clips |
-| 507 | the expedition team | three AI teammates: rig builder, state machine, walk/wave/admire poses |
-| 690 | player & controls | pointer lock, mouse look, key state, jump |
-| 754 | first-person gear | sleeves, forearms, hands, machete — a child of the camera |
-| 806 | pickups | `nearestGem`, `tryPickup`, interaction hints |
-| 842 | audio | `sfx()` — procedural Web Audio, no sample files |
-| 857 | HUD & minimap | score, energy bar, `drawMinimap()` on Canvas 2D |
-| 925 | physics & update | `collide()` push-out, delta-time movement, energy economy, all animation |
-| 1104 | main loop | fixed-loop `requestAnimationFrame` with a frame-time clamp |
+| 127 | terrain | `terrainH(x, z)` — the analytic heightfield, river, temple plaza, water plane |
+| 203 | vegetation & rocks | tree / rock / grass placement, collision list, minimap data |
+| 290 | atmosphere | procedural mist, fireflies, distant ridges, canopy overhead |
+| 371 | ruins & idol | temple stair pyramid, pedestal, Golden Idol, its glow light |
+| 432 | expedition boat | the finish point and win state |
+| 461 | gems | the ten collectibles |
+| 486 | wildlife | birds, butterflies, monkeys — parametric, no animation clips |
+| 537 | the expedition team | three AI teammates: rig builder, state machine, walk/wave/admire poses |
+| 741 | player & controls | pointer lock, mouse look, key state, buffered jump |
+| 808 | first-person gear | sleeves, forearms, hands, machete — a child of the camera |
+| 860 | pickups | `nearestGem`, `tryPickup`, interaction hints |
+| 897 | audio | `sfx()` — procedural Web Audio, no sample files |
+| 912 | HUD & minimap | score, energy bar, `drawMinimap()` on Canvas 2D |
+| 980 | physics & update | `resolveXZ()` / `groundAt()` — push-out, step-up, sub-stepped movement, energy economy, all animation |
+| 1197 | main loop | fixed-loop `requestAnimationFrame` with a frame-time clamp |
 
 [`showcase.html`](showcase.html) is the project dossier: the full design, identity and technical write-up, self-contained like the game.
 

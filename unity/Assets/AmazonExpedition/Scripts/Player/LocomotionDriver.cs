@@ -49,7 +49,9 @@ namespace AmazonExpedition.Player
         [Range(0.5f, 12f)] [SerializeField] private float weightShiftResponse = 4.5f;
         [SerializeField] private bool useRootMotionFacing = true;
 
-        public ProceduralPose Pose { get; private set; }
+        // Created at construction, not in Awake: PlayerCharacter.Awake reads
+        // Pose and Unity gives no ordering guarantee between the two Awakes.
+        public ProceduralPose Pose { get; private set; } = new ProceduralPose();
 
         private int hashSpeed, hashStrafe, hashVertical, hashAccel, hashTurn, hashGrounded,
             hashSlope, hashCrouch, hashWater, hashLand, hashStumble, hashSprint;
@@ -64,7 +66,6 @@ namespace AmazonExpedition.Player
 
         private void Awake()
         {
-            Pose = new ProceduralPose();
             if (motor == null) motor = GetComponentInParent<PlayerMotor>();
             if (animator == null) animator = GetComponentInChildren<Animator>();
             if (modelRoot == null && animator != null) modelRoot = animator.transform;
@@ -146,6 +147,7 @@ namespace AmazonExpedition.Player
 
             var stride = motor.Grounded && speed > 0.1f ? dt * (0.9f + normalized * 1.6f) : 0f;
             Pose.strideTimer += stride;
+            RaiseStrideFootsteps(normalized, dt);
             Pose.landImpact = smoothedLand;
             Pose.turnRate = smoothedTurn;
             Pose.lateralAccel = smoothedLateral;
@@ -190,6 +192,24 @@ namespace AmazonExpedition.Player
             var handler = Footstep;
             if (handler != null) handler(strength);
         }
+
+        /// Fires a footstep each time the stride cycle passes through a footfall.
+        /// Animation events cover a rigged character, but anything driving the
+        /// procedural rig has no events to rely on and would otherwise stay
+        /// silent for every step.
+        private void RaiseStrideFootsteps(float normalized, float dt)
+        {
+            if (!motor.Grounded || motor.Speed <= 0.1f) return;
+
+            var cadence = 0.62f - Mathf.Clamp01(normalized) * 0.22f;
+            strideAccumulator += dt;
+            if (strideAccumulator < cadence) return;
+            strideAccumulator -= cadence;
+
+            RaiseFootstep(0.55f + Mathf.Clamp01(normalized) * 0.65f);
+        }
+
+        private float strideAccumulator;
 
         public void AnimationEvent_Footstep(string foot)
         {

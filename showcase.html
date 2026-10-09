@@ -503,7 +503,7 @@ footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)
     <div class="hd rv">
       <span class="eyebrow"><span class="dot"></span>01 — Overview</span>
       <h2>A rainforest that generates itself.</h2>
-      <p class="lede">Amazon Expedition 3D is a complete, playable 3D world shipped as <b>one HTML file and one library</b>. The world is not modelled — it is <i>computed</i>. A closed-form height function carves rolling hills, cuts a river channel through the middle of the map, and raises a temple mound at the far end. Everything that stands on that surface is scattered by seeded random placement, then animated by parametric trigonometry.</p>
+      <p class="lede">Amazon Expedition 3D is a complete, playable 3D world shipped as <b>one HTML file and one library</b>. The world is not modelled — it is <i>computed</i>. A closed-form height function carves rolling hills, cuts a river channel through the middle of the map, and levels a plaza around the temple at the far end. Everything that stands on that surface is scattered by seeded random placement, then animated by parametric trigonometry.</p>
       <div class="rule"></div>
       <p class="lede">The design brief was simple: <b>maximum atmosphere for minimum bytes</b>. No textures, no mesh files, no audio files — every surface is shaded by a Lambert or Phong material, every creature is eight lines of primitive geometry, and every sound is a synthesised oscillator. What the player gets is a jungle that feels alive because the maths says it should.</p>
     </div>
@@ -512,7 +512,7 @@ footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)
       <div class="stat e"><div class="n"><span data-count="12321" data-fmt="comma">0</span></div><div class="l">Terrain vertices</div><div class="s">A 110 × 110 displaced grid, normals recomputed per frame of generation.</div></div>
       <div class="stat"><div class="n"><span data-count="730">0</span></div><div class="l">Placed objects</div><div class="s">240 trees · 70 rocks · 420 grass tufts, all instanced as primitives.</div></div>
       <div class="stat b"><div class="n"><span data-count="50">0</span></div><div class="l">Wildlife agents</div><div class="s">14 birds, 30 butterflies, 6 monkeys — each on its own orbit.</div></div>
-      <div class="stat g"><div class="n"><span data-count="1127">0</span></div><div class="l">Lines of shippable code</div><div class="s">Game, HUD, audio, world, gear and the AI team in a single <code>amazon_3d.html</code>.</div></div>
+      <div class="stat g"><div class="n"><span data-count="1219">0</span></div><div class="l">Lines of shippable code</div><div class="s">Game, HUD, audio, world, gear and the AI team in a single <code>amazon_3d.html</code>.</div></div>
     </div>
 
     <div class="grid g3" style="margin-top:24px">
@@ -522,7 +522,7 @@ footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)
       </article>
       <article class="card rv" style="--i:1">
         <h3>Deterministic systems</h3>
-        <p style="color:var(--ink-3);font-size:14.5px;margin-top:10px">Height, river depth, ruin placement, wildlife orbits and pickups are all closed-form functions — inspectable, tunable and readable, which is what makes a 747-line project still feel architected.</p>
+        <p style="color:var(--ink-3);font-size:14.5px;margin-top:10px">Height, river depth, ruin placement, wildlife orbits and pickups are all closed-form functions — inspectable, tunable and readable, which is what makes a 1219-line project still feel architected.</p>
       </article>
       <article class="card rv" style="--i:2">
         <h3>One-hour loop, real tension</h3>
@@ -787,7 +787,7 @@ footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)
         <span class="no">01</span>
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 18 9 8l5 6 3-4 4 8z"/><path d="M3 21h18"/></svg></div>
         <h3>Analytic heightfield</h3>
-        <p>Three stacked sine fields produce the hills, a windowed falloff carves the river, and a radial ramp lifts the temple mound — one pure function, called for terrain build, object placement and player grounding alike.</p>
+        <p>Three stacked sine fields produce the hills, a windowed falloff carves the river, and a flat plaza is blended in around the temple — one pure function, called for terrain build, object placement and player grounding alike.</p>
       </article>
       <article class="card fcard rv tilt" style="--i:1">
         <span class="no">02</span>
@@ -859,7 +859,7 @@ footer{padding:56px 0;border-top:1px solid var(--line);background:rgba(3,8,5,.6)
           <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">Mouse</span> Pointer lock with pitch clamping; releasing the lock pauses the game automatically.</li>
           <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">Shift</span> Sprint at 12 u/s against a 7.5 u/s walk, paid for in energy.</li>
           <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">Space</span> 8.5 u/s impulse against 22 u/s² gravity, with grounded state tracking.</li>
-          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">E</span> Context pickup — nearest gem first, then the idol, resolved by distance.</li>
+          <li style="display:flex;gap:12px;font-size:14.5px;color:var(--ink-2)"><span style="color:var(--gold);font-family:var(--mono);font-size:12px">E</span> Context pickup — nearest gem first, then the idol from its pedestal, resolved by distance and height.</li>
         </ul>
       </div>
       <div class="card">
@@ -1157,45 +1157,46 @@ var SYS = [
     t:'Terrain &amp; worldgen',
     l:['<b>One function, four consumers</b> — terrain mesh, prop placement, wildlife altitude and player grounding all call <code>terrainH(x,z)</code>.',
        '<b>Layered sines</b> at three frequencies give large landforms plus surface detail without a single texture.',
-       '<b>Windowed river carve</b> with smooth banks; a radial ramp lifts the temple mound so the goal reads on the horizon.',
+       '<b>Windowed river carve</b> with smooth banks; a flat plaza is blended in around the temple so its stair pyramid sits on level ground.',
        '<b>Normals recomputed once</b> after displacement, then frozen for the life of the build.'],
-    c:'<span class="c">// heightfield: hills, river, temple mound</span>\n'+
-       '<span class="k">function</span> <span class="f">terrainH</span>(x, z){\n'+
+    c:'<span class="k">function</span> <span class="f">terrainH</span>(x, z){\n'+
        '  <span class="k">let</span> h = <span class="n">3</span>*Math.<span class="f">sin</span>(x*<span class="n">0.02</span>)*Math.<span class="f">cos</span>(z*<span class="n">0.02</span>)\n'+
        '        + <span class="n">1.6</span>*Math.<span class="f">sin</span>(x*<span class="n">0.06</span>+<span class="n">2</span>)*Math.<span class="f">sin</span>(z*<span class="n">0.05</span>)\n'+
        '        + <span class="n">0.7</span>*Math.<span class="f">sin</span>(x*<span class="n">0.13</span>)*Math.<span class="f">cos</span>(z*<span class="n">0.11</span>);\n\n'+
-       '  <span class="c">// carve the river channel</span>\n'+
-       '  <span class="k">if</span> (z &gt; RIVER_Z1 &amp;&amp; z &lt; RIVER_Z2){\n'+
-       '    <span class="k">const</span> d = Math.<span class="f">min</span>(<span class="n">1</span>, (Math.<span class="f">min</span>(z-RIVER_Z1, RIVER_Z2-z)/<span class="n">6</span> + <span class="n">0.15</span>));\n'+
-       '    h = -<span class="n">2.6</span>*d + h*<span class="n">0.15</span>;\n'+
-       '  }\n\n'+
-       '  <span class="c">// raise the temple mound</span>\n'+
-       '  <span class="k">const</span> dr = Math.<span class="f">hypot</span>(x, z+<span class="n">120</span>);\n'+
-       '  <span class="k">if</span> (dr &lt; <span class="n">26</span>) h = h*(dr/<span class="n">26</span>) + <span class="n">0.5</span>*(<span class="n">1</span>-dr/<span class="n">26</span>);\n'+
+       '  <span class="c">// level the temple plaza</span>\n'+
+       '  <span class="k">const</span> dr = Math.<span class="f">hypot</span>(x, z-RUIN_Z);\n'+
+       '  <span class="k">if</span> (dr &lt; <span class="n">44</span>)\n'+
+       '    h = h*Math.<span class="f">min</span>(<span class="n">1</span>,(dr-<span class="n">28</span>)/<span class="n">16</span>) + <span class="n">0.45</span>*(<span class="n">1</span>-Math.<span class="f">min</span>(<span class="n">1</span>,(dr-<span class="n">28</span>)/<span class="n">16</span>));\n'+
        '  <span class="k">return</span> h;\n}'
   },
   {
     t:'Movement &amp; physics',
     l:['<b>Facing-relative input</b> — forward and strafe are rotated by yaw, then normalised so diagonals don\'t cheat.',
-       '<b>Impulse jump</b> against constant gravity with an explicit grounded flag, so you can\'t double-jump.',
-       '<b>Push-out collision</b> against circular colliders: find the penetration depth, displace along the normal, keep the stride.',
+       '<b>Sub-stepped move</b> — a frame of travel is sliced to 0.35 units, so sprinting (or a dt spike) cannot tunnel through a trunk.',
+       '<b>Buffered jump</b> — a press fires on the next grounded frame, and holding Space never re-fires on landing.',
+       '<b>Push-out that sums</b> — every overlapping obstacle is resolved in one pass, so you slide along a trunk instead of sticking to it.',
+       '<b>Boxes with step-up</b> — the temple stairs and the boat are solid walls until their top is within step reach, then they become floor.',
        '<b>Delta clamped</b> at 50&nbsp;ms so a backgrounded tab never teleports the player through the jungle.'],
-    c:'<span class="c">// input → world velocity, normalised</span>\n'+
-       '<span class="k">const</span> sin = Math.<span class="f">sin</span>(player.yaw), cos = Math.<span class="f">cos</span>(player.yaw);\n'+
-       '<span class="k">let</span> vx = (-sin*fwd + cos*strafe);\n'+
-       '<span class="k">let</span> vz = (-cos*fwd - sin*strafe);\n'+
-       '<span class="k">const</span> l = Math.<span class="f">hypot</span>(vx, vz);\n'+
-       'vx = vx/l*speed; vz = vz/l*speed;\n\n'+
-       '<span class="c">// jump, gravity, ground clamp</span>\n'+
-       '<span class="k">if</span> (keys.Space &amp;&amp; player.onGround){\n'+
-       '  player.vel.y = JUMP; player.onGround = <span class="k">false</span>;\n'+
-       '}\n'+
-       'player.vel.y -= GRAV*dt;\n\n'+
-       '<span class="c">// push out of tree &amp; pillar colliders</span>\n'+
-       '<span class="k">const</span> push = <span class="f">collide</span>(nx, nz);\n'+
-       '<span class="k">if</span> (push){ nx += push.x; nz += push.z; }\n\n'+
-       '<span class="c">// wading is slow and tiring</span>\n'+
-       '<span class="k">if</span> (wading) player.energy -= dt*<span class="n">0.8</span>;'
+    c:'<span class="c">// collide against everything at once, not just the first hit</span>\n'+
+       '<span class="k">for</span> (<span class="k">const</span> c <span class="k">of</span> colliders){\n'+
+       '  <span class="k">const</span> dx = x-c.x, dz = z-c.z, r = c.r + radius;\n'+
+       '  <span class="k">const</span> d = Math.<span class="f">sqrt</span>(dx*dx + dz*dz);\n'+
+       '  <span class="k">if</span> (d &lt; r) { x += dx/d*(r-d); z += dz/d*(r-d); }\n'+
+       '}\n\n'+
+       '<span class="c">// a box low enough to step onto is floor, not wall</span>\n'+
+       '<span class="k">for</span> (<span class="k">const</span> b <span class="k">of</span> solids){\n'+
+       '  <span class="k">if</span> (feetY + EYE &lt; b.y0 || feetY &gt; b.y1) <span class="k">continue</span>;\n'+
+       '  <span class="k">const</span> dx = x-b.x, dz = z-b.z;\n'+
+       '  <span class="k">const</span> px = b.hx + radius - Math.<span class="f">abs</span>(dx);\n'+
+       '  <span class="k">const</span> pz = b.hz + radius - Math.<span class="f">abs</span>(dz);\n'+
+       '  <span class="k">if</span> (px &lt;= <span class="n">0</span> || pz &lt;= <span class="n">0</span>) <span class="k">continue</span>;\n'+
+       '  <span class="k">if</span> (b.y1 &lt;= feetY + STEP_UP) <span class="k">continue</span>;   <span class="c">// walkable</span>\n'+
+       '  <span class="k">if</span> (px &lt; pz) x += dx &gt;= <span class="n">0</span> ? px : -px;\n'+
+       '  <span class="k">else</span>        z += dz &gt;= <span class="n">0</span> ? pz : -pz;\n'+
+       '}\n\n'+
+       '<span class="c">// land on whatever the ground really is down here</span>\n'+
+       '<span class="k">const</span> g = Math.<span class="f">max</span>(<span class="f">terrainH</span>(x, z), WATER_Y);\n'+
+       '<span class="k">if</span> (y &lt;= g) { y = g; vel.y = <span class="n">0</span>; onGround = <span class="k">true</span>; }'
   },
   {
     t:'Wildlife',

@@ -61,7 +61,16 @@ namespace AmazonExpedition.Player
                 locomotion.Footstep += HandleFootstep;
                 subscribedLocomotion = locomotion;
             }
-            receivers = GetComponentsInChildren<IFootstepReceiver>();
+            var found = GetComponentsInChildren<IFootstepReceiver>();
+            var list = new List<IFootstepReceiver>(found.Length);
+            for (var i = 0; i < found.Length; i++)
+            {
+                // This component is itself a receiver; including it would make
+                // HandleFootstep recurse into OnFootstep forever.
+                if (ReferenceEquals(found[i], this)) continue;
+                list.Add(found[i]);
+            }
+            receivers = list.ToArray();
         }
 
         private void OnDisable()
