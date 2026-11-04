@@ -28,6 +28,22 @@
   #pauseOverlay{display:none}
   .keys{margin-top:14px;font-size:14px;opacity:.85;line-height:1.7}
   kbd{background:#123d1f;padding:2px 8px;border-radius:5px;border:1px solid #3a7}
+  #vignette{position:fixed;inset:0;z-index:4;pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 52%, rgba(2,10,6,.42) 100%)}
+  #clock{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:6;
+    font-family:'Courier New',monospace;font-size:13px;letter-spacing:.12em;color:#eafff0;
+    background:rgba(6,20,12,.55);border:1px solid rgba(125,255,160,.28);
+    padding:5px 14px;border-radius:14px;text-shadow:0 1px 2px #000;user-select:none}
+  #rainChip{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:6;display:none;
+    font-family:'Courier New',monospace;font-size:11px;letter-spacing:.28em;color:#bfe6ff;
+    background:rgba(20,40,60,.6);border:1px solid rgba(160,210,255,.4);
+    padding:4px 14px;border-radius:12px;animation:rainPulse 1.4s infinite}
+  @keyframes rainPulse{50%{opacity:.55}}
+  #scorePop{position:fixed;left:50%;top:38%;transform:translateX(-50%);z-index:7;pointer-events:none}
+  .pop{position:absolute;left:0;top:0;transform:translate(-50%,0);white-space:nowrap;
+    font:bold 22px 'Segoe UI',sans-serif;color:#ffd54a;text-shadow:0 0 12px rgba(255,180,40,.65),0 2px 3px #000;
+    animation:popRise 1.25s ease-out forwards}
+  @keyframes popRise{0%{opacity:0;margin-top:14px}15%{opacity:1}100%{opacity:0;margin-top:-46px}}
 </style>
 </head>
 <body>
@@ -58,6 +74,10 @@
   </div>
 </div>
 <canvas id="minimap" width="170" height="170"></canvas>
+<div id="vignette"></div>
+<div id="clock">DAY 1 &middot; 08:02</div>
+<div id="rainChip">&#9748; RAIN</div>
+<div id="scorePop"></div>
 
 <div class="overlay" id="startOverlay">
   <h1>AMAZON EXPEDITION 3D</h1>
@@ -68,7 +88,8 @@
   <button class="btn" id="startBtn">ENTER THE JUNGLE</button>
   <div class="keys">
     <kbd>W A S D</kbd> move &nbsp; <kbd>Mouse</kbd> look &nbsp; <kbd>Shift</kbd> sprint &nbsp;
-    <kbd>Space</kbd> jump &nbsp; <kbd>E</kbd> pick up &nbsp; <kbd>Esc</kbd> pause
+    <kbd>Space</kbd> jump &nbsp; <kbd>E</kbd> pick up &nbsp; <kbd>Esc</kbd> pause<br>
+    <kbd>T</kbd> time-lapse &nbsp; <kbd>M</kbd> sound on/off
   </div>
 </div>
 
@@ -99,10 +120,14 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x9ed7f5);
-scene.fog = new THREE.FogExp2(0xa8dcc8, 0.0075);
+const FOG_DAY = new THREE.Color(0xa8dcc8), FOG_NIGHT = new THREE.Color(0x060d16);
+const fog = new THREE.FogExp2(FOG_DAY.getHex(), 0.0075);
+scene.fog = fog;
 
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 600);
 camera.rotation.order = 'YXZ';
@@ -117,6 +142,114 @@ sun.shadow.camera.left = -160; sun.shadow.camera.right = 160;
 sun.shadow.camera.top = 160; sun.shadow.camera.bottom = -160;
 sun.shadow.camera.far = 400;
 scene.add(sun);
+const moon = new THREE.DirectionalLight(0x9db8ff, 0.0);
+moon.position.set(-80, 120, -40);
+scene.add(moon);
+
+// ------------------- sky: gradient dome + sun/moon + stars -------------------
+const skyUniforms = {
+  topColor:     { value: new THREE.Color(0x2e6fb8) },
+  horizonColor: { value: new THREE.Color(0xd6ece0) },
+  sunDir:       { value: new THREE.Vector3(0.5, 0.6, 0.35).normalize() },
+  sunColor:     { value: new THREE.Color(0xfff3c4) },
+  sunIntensity: { value: 1.0 },
+  nightFactor:  { value: 0.0 }
+};
+const sky = new THREE.Mesh(
+  new THREE.SphereGeometry(430, 28, 18),
+  new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: skyUniforms,
+    vertexShader: [
+      'varying vec3 vWorld;',
+      'void main(){',
+      '  vWorld = (modelMatrix * vec4(position, 1.0)).xyz;',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'varying vec3 vWorld;',
+      'uniform vec3 topColor; uniform vec3 horizonColor; uniform vec3 sunColor;',
+      'uniform vec3 sunDir; uniform float sunIntensity; uniform float nightFactor;',
+      'void main(){',
+      '  vec3 d = normalize(vWorld);',
+      '  float up = clamp(d.y, 0.0, 1.0);',
+      '  float grad = pow(1.0 - up, 1.7);',
+      '  vec3 col = mix(topColor, horizonColor, grad);',
+      '  col = mix(col, horizonColor * 0.32, smoothstep(0.0, 0.18, -d.y));',   // below horizon: dark earth haze
+      '  float cs = dot(d, normalize(sunDir));',
+      '  float disc = smoothstep(0.99935, 0.99975, cs);',
+      '  float halo = pow(max(cs, 0.0), 160.0) * 0.9 + pow(max(cs, 0.0), 14.0) * 0.20;',
+      '  col += sunColor * (disc * 1.7 + halo) * sunIntensity;',
+      '  float cm = dot(d, -normalize(sunDir));',
+      '  float mdisc = smoothstep(0.99955, 0.99988, cm);',
+      '  float mhalo = pow(max(cm, 0.0), 260.0) * 0.6 + pow(max(cm, 0.0), 20.0) * 0.06;',
+      '  col += vec3(0.80, 0.87, 1.0) * (mdisc * 1.3 + mhalo) * nightFactor;',
+      '  gl_FragColor = vec4(col, 1.0);',
+      '}'
+    ].join('\n')
+  })
+);
+scene.add(sky);
+
+// a star field that only shows after sunset
+const starPositions = new Float32Array(900 * 3);
+for (let i = 0; i < 900; i++){
+  const u = Math.random() * 2 - 1, theta = Math.random() * Math.PI * 2;
+  const r = Math.sqrt(1 - u * u), y = Math.abs(u) * 0.95 + 0.05;
+  const s = 400;
+  starPositions[i*3]   = Math.cos(theta) * r * s;
+  starPositions[i*3+1] = y * s;
+  starPositions[i*3+2] = Math.sin(theta) * r * s;
+}
+const starGeo = new THREE.BufferGeometry();
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
+  color: 0xffffff, size: 1.7, sizeAttenuation: false,
+  transparent: true, opacity: 0, depthWrite: false, fog: false
+}));
+scene.add(stars);
+
+// ------------------- time of day: the sky is now a living engine -------------------
+const TOP_DAY = new THREE.Color(0x2e6fb8), TOP_NIGHT = new THREE.Color(0x040a1c);
+const HOR_DAY = new THREE.Color(0xd6ece0), HOR_NIGHT = new THREE.Color(0x101c2e);
+const DUSK    = new THREE.Color(0xff8a3c);
+const SUN_WHITE = new THREE.Color(0xfff2cc), SUN_LOW = new THREE.Color(0xffb066);
+const DAY_LENGTH = 8 * 60;             // one full day every 8 real minutes
+let timeOfDay = 0.335, dayCount = 1;   // start mid-morning
+let weatherDim = 1;                    // rain dims the sun (1 = clear sky)
+const celestial = new THREE.Vector3();
+const smooth01 = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+function updateSky(dt){
+  timeOfDay += dt / DAY_LENGTH;
+  if (timeOfDay >= 1){ timeOfDay -= 1; dayCount++; }
+  const a = (timeOfDay - 0.25) * Math.PI * 2;      // 0.25 == 06:00, sunrise
+  celestial.set(Math.cos(a), Math.sin(a), 0.35).normalize();
+  const elev = celestial.y;
+  const dayF = smooth01(-0.13, 0.24, elev);
+  const nightF = 1 - dayF;
+  const horizonGlow = Math.exp(-Math.pow(elev * 4.4, 2));
+
+  skyUniforms.topColor.value.copy(TOP_DAY).lerp(TOP_NIGHT, nightF);
+  skyUniforms.horizonColor.value.copy(HOR_DAY).lerp(HOR_NIGHT, nightF).lerp(DUSK, horizonGlow * 0.5);
+  skyUniforms.sunDir.value.copy(celestial);
+  skyUniforms.sunIntensity.value = smooth01(-0.06, 0.14, elev) * weatherDim;
+  skyUniforms.nightFactor.value = nightF;
+
+  sun.position.copy(celestial).multiplyScalar(160);
+  sun.intensity = 1.15 * smooth01(0.0, 0.35, elev) * weatherDim;
+  sun.color.copy(SUN_WHITE).lerp(SUN_LOW, (1 - smooth01(0.02, 0.42, Math.abs(elev))) * 0.8);
+  moon.position.copy(celestial).multiplyScalar(-160);
+  moon.intensity = 0.38 * nightF;
+  moon.position.y = Math.max(moon.position.y, 8);
+
+  hemi.intensity = (0.30 + 0.55 * dayF) * (0.7 + 0.3 * weatherDim);
+  fog.color.copy(FOG_DAY).lerp(FOG_NIGHT, nightF);
+  fog.density = 0.0075 + 0.0045 * nightF;
+  stars.material.opacity = nightF * nightF * 0.95;
+}
 
 addEventListener('resize', () => {
   camera.aspect = innerWidth/innerHeight;
@@ -184,20 +317,77 @@ scene.add(ground);
 const waterGeo = new THREE.PlaneGeometry(WORLD*2, RIVER_Z2-RIVER_Z1, 26, 3);
 waterGeo.rotateX(-Math.PI/2);
 const waterBase = Float32Array.from(waterGeo.attributes.position.array);
-const water = new THREE.Mesh(waterGeo,
-  new THREE.MeshPhongMaterial({color:0x1f7fae, transparent:true, opacity:0.72, shininess:90}));
+const waterUniforms = {
+  time:        { value: 0 },
+  sunDir:      skyUniforms.sunDir,       // shared references: always in sync
+  horizonColor:skyUniforms.horizonColor,
+  sunColor:    skyUniforms.sunColor,
+  sunI:        skyUniforms.sunIntensity,
+  nightF:      skyUniforms.nightFactor,
+  fogColor:    { value: fog.color },
+  fogDensity:  { value: fog.density }
+};
+const water = new THREE.Mesh(waterGeo, new THREE.ShaderMaterial({
+  transparent: true,
+  uniforms: waterUniforms,
+  vertexShader: [
+    'uniform float time;',
+    'varying vec2 vLocal; varying vec3 vWorld;',
+    'float waveH(vec2 p){ return sin(p.x*0.35 + time*1.7)*0.09 + sin(p.y*0.6 - time*1.2)*0.06; }',
+    'void main(){',
+    '  vec3 p = position;',
+    '  p.y += waveH(p.xz);',
+    '  vLocal = position.xz;',
+    '  vec4 world = modelMatrix * vec4(p, 1.0);',
+    '  vWorld = world.xyz;',
+    '  gl_Position = projectionMatrix * viewMatrix * world;',
+    '}'
+  ].join('\n'),
+  fragmentShader: [
+    'uniform float time, fogDensity; uniform vec3 fogColor, sunColor;',
+    'uniform vec3 sunDir, horizonColor; uniform float sunI, nightF;',
+    'varying vec2 vLocal; varying vec3 vWorld;',
+    'void main(){',
+    '  vec2 p = vLocal;',
+    // analytic gradient of the swell + a high-frequency chop
+    '  vec2 g = vec2( cos(p.x*0.35 + time*1.7)*0.0315, cos(p.y*0.6 - time*1.2)*0.036 );',
+    '  g += vec2( cos(p.x*2.3 + time*2.6)*0.012, cos(p.y*1.9 - time*2.2)*0.010 );',
+    '  g += vec2( cos(p.x*5.7 - time*3.1)*0.005, cos(p.y*4.3 + time*2.8)*0.004 );',
+    '  vec3 n = normalize(vec3(-g.x, 1.0, -g.y));',
+    '  vec3 viewDir = normalize(cameraPosition - vWorld);',
+    // deep jungle river: green-black depths, sky-tinted at grazing angles
+    '  vec3 deep = vec3(0.035, 0.17, 0.18), shallow = vec3(0.10, 0.38, 0.38);',
+    '  float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 3.0);',
+    '  vec3 col = mix(deep, shallow, 0.35 + 0.3*n.x);',
+    '  col = mix(col, horizonColor, clamp(fres*0.85 + 0.08, 0.0, 1.0));',
+    // sun glint + moon glint
+    '  vec3 refl = reflect(-viewDir, n);',
+    '  float spec = pow(max(dot(refl, normalize(sunDir)), 0.0), 110.0);',
+    '  col += sunColor * spec * 1.35 * sunI;',
+    '  float mspec = pow(max(dot(refl, -normalize(sunDir)), 0.0), 240.0);',
+    '  col += vec3(0.62, 0.72, 0.95) * mspec * 0.9 * nightF;',
+    // exp2 fog, matching FogExp2
+    '  float dist = length(cameraPosition - vWorld);',
+    '  float f = 1.0 - exp(-fogDensity*fogDensity*dist*dist);',
+    '  col = mix(col, fogColor, clamp(f, 0.0, 1.0));',
+    '  gl_FragColor = vec4(col, 0.86 + 0.12*fres);',
+    '}'
+  ].join('\n')
+}));
 water.position.set(0, WATER_Y, (RIVER_Z1+RIVER_Z2)/2);
 scene.add(water);
 
-// the river breathes: two crossing sine waves over a coarse mesh
+// the river breathes: two crossing sine waves over a coarse mesh —
+// the fragment shader derives its own normals, so no recompute here
 function updateWater(t){
+  waterUniforms.time.value = t;
+  waterUniforms.fogDensity.value = fog.density;
   const pos = waterGeo.attributes.position;
   for (let i=0;i<pos.count;i++){
     const x = waterBase[i*3], z = waterBase[i*3+2];
     pos.setY(i, Math.sin(x*0.35 + t*1.7)*0.09 + Math.sin(z*0.6 - t*1.2)*0.06);
   }
   pos.needsUpdate = true;
-  waterGeo.computeVertexNormals();
 }
 
 // ------------------- vegetation & rocks -------------------
@@ -209,6 +399,7 @@ function updateWater(t){
 const colliders = [];
 const solids = [];
 const minimapTrees = [];
+const swayers = [];
 const trunkMat = new THREE.MeshLambertMaterial({color:0x5a3d22});
 const leafMats = [0x1e5c1e, 0x2c7a24, 0x1a6b3a, 0x35771e].map(c => new THREE.MeshLambertMaterial({color:c}));
 const rockMat = new THREE.MeshLambertMaterial({color:0x8a8a8a});
@@ -232,6 +423,7 @@ function placeTree(x,z){
     leaf.position.set((Math.random()-0.5)*2.2*s, (9+i*2.1)*s, (Math.random()-0.5)*2.2*s);
     leaf.scale.y = 0.72;
     leaf.castShadow = true;
+    swayers.push({m: leaf, base: 0, ph: Math.random()*6.28});
     g.add(leaf);
   }
   g.position.set(x, terrainH(x,z), z);
@@ -255,6 +447,7 @@ function placeGrass(x,z){
     new THREE.MeshLambertMaterial({color:0x4d9e2e}));
   g.position.set(x, terrainH(x,z)+0.4, z);
   g.rotation.z = (Math.random()-0.5)*0.4;
+  swayers.push({m: g, base: g.rotation.z, ph: Math.random()*6.28});
   scene.add(g);
 }
 
@@ -277,6 +470,7 @@ for (let i=0;i<420;i++){
   placeGrass(x,z);
 }
 
+const CLOUD_DAY = new THREE.Color(0xffffff), CLOUD_NIGHT = new THREE.Color(0x39434f);
 const clouds = [];
 for (let i=0;i<10;i++){
   const c = new THREE.Mesh(new THREE.SphereGeometry(8+Math.random()*10, 7, 5),
@@ -427,6 +621,51 @@ scene.add(idol);
 const idolGlow = new THREE.PointLight(0xffc94a, 1.2, 18);
 idolGlow.position.set(0, 6.9, RUIN_Z);
 scene.add(idolGlow);
+
+// ------------------- campfire at base camp + two temple braziers -------------------
+const fires = [];
+function makeFire(x, z, scale){
+  const g = new THREE.Group();
+  for (let i=0;i<7;i++){
+    const a = i/7*Math.PI*2;
+    const st = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22*scale, 0), rockMat);
+    st.position.set(Math.cos(a)*0.55*scale, 0.14*scale, Math.sin(a)*0.55*scale);
+    g.add(st);
+  }
+  const logGeo = new THREE.CylinderGeometry(0.09*scale, 0.11*scale, 1.0*scale, 6);
+  const log1 = new THREE.Mesh(logGeo, trunkMat); log1.rotation.z =  1.25; log1.position.y = 0.20*scale;
+  const log2 = new THREE.Mesh(logGeo, trunkMat); log2.rotation.z = -1.25; log2.position.y = 0.20*scale;
+  const flameMat = new THREE.MeshBasicMaterial({color:0xffa03c, transparent:true, opacity:0.95});
+  const coreMat  = new THREE.MeshBasicMaterial({color:0xffe37a});
+  const f1 = new THREE.Mesh(new THREE.ConeGeometry(0.30*scale, 0.85*scale, 6), flameMat); f1.position.y = 0.68*scale;
+  const f2 = new THREE.Mesh(new THREE.ConeGeometry(0.16*scale, 0.55*scale, 6), coreMat);  f2.position.y = 0.60*scale;
+  const light = new THREE.PointLight(0xff9040, 1.0, 11*scale);
+  light.position.y = 0.95*scale;
+  g.add(log1, log2, f1, f2, light);
+  g.position.set(x, terrainH(x, z), z);
+  scene.add(g);
+  fires.push({f1, f2, light, ph: Math.random()*6.28});
+}
+makeFire(-4, 177, 1.0);          // base camp, by the boat
+makeFire( 7.5, RUIN_Z+7, 1.3);   // temple plaza brazier, east
+makeFire(-7.5, RUIN_Z+7, 1.3);   // temple plaza brazier, west
+
+// ------------------- weather: scheduled rain showers off the river -------------------
+const rainPositions = new Float32Array(900 * 3);
+for (let i=0;i<900;i++){
+  rainPositions[i*3]   = (Math.random()-0.5)*130;
+  rainPositions[i*3+1] = Math.random()*55;
+  rainPositions[i*3+2] = (Math.random()-0.5)*130;
+}
+const rainGeo = new THREE.BufferGeometry();
+rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
+const rainMat = new THREE.PointsMaterial({color:0xbcd8ec, size:0.22, transparent:true, opacity:0, depthWrite:false});
+const rain = new THREE.Points(rainGeo, rainMat);
+rain.visible = false;
+rain.frustumCulled = false;
+scene.add(rain);
+let raining = false, rainT = 0, nextRain = 42, rainLevel = 0;
+const rainChip = document.getElementById('rainChip');
 
 // ------------------- expedition boat (finish point) -------------------
 {
@@ -757,6 +996,8 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Escape' && !paused) showPause(true);
   if (e.code === 'KeyE') tryPickup();
   if (e.code === 'Space' && !e.repeat) jumpBuffer = 0.15;
+  if (e.code === 'KeyM') toggleMute();
+  if (e.code === 'KeyT'){ timeOfDay = (timeOfDay + 1/24) % 1; showHint('Time-lapse: +1 hour', 900); }
 });
 document.addEventListener('keyup', e => keys[e.code] = false);
 
@@ -876,6 +1117,7 @@ function tryPickup(){
     player.score += 10;
     player.energy = Math.min(100, player.energy + 8);
     punch = 1;
+    popScore('+10');
     sfx(880, 0.12); setTimeout(()=>sfx(1320, 0.15), 90);
     updateHUD();
     return;
@@ -887,29 +1129,132 @@ function tryPickup(){
     idolGlow.intensity = 0;
     player.score += 50;
     punch = 1;
+    popScore('+50');
     sfx(520, 0.2); setTimeout(()=>sfx(780, 0.25), 150);
     showHint('You took the GOLDEN IDOL! Bring it back to the boat.', 4000);
     updateHUD();
   }
 }
 
-// ------------------- audio -------------------
-let AC = null;
+// ------------------- audio: a procedural world, zero samples -------------------
+let AC = null, master = null, windGain = null, rainGain = null, audioMuted = false;
+let audioT = 2.5, pluckT = 4;
+
+function ac(){
+  if (!AC){
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = 1;
+      master.connect(AC.destination);
+      startWind();
+    } catch(e){ AC = null; }
+  }
+  if (AC && AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function noiseBuffer(ctx, seconds){
+  const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random()*2 - 1;
+  return buf;
+}
+// wind, rain, and a slow detuned pad — the jungle's floor
+function startWind(){
+  const src = AC.createBufferSource();
+  src.buffer = noiseBuffer(AC, 2.5); src.loop = true;
+  const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 340;
+  windGain = AC.createGain(); windGain.gain.value = 0.05;
+  src.connect(lp); lp.connect(windGain); windGain.connect(master); src.start();
+
+  const rsrc = AC.createBufferSource();
+  rsrc.buffer = noiseBuffer(AC, 2.5); rsrc.loop = true;
+  const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 0.5;
+  rainGain = AC.createGain(); rainGain.gain.value = 0;
+  rsrc.connect(bp); bp.connect(rainGain); rainGain.connect(master); rsrc.start();
+
+  const padGain = AC.createGain(); padGain.gain.value = 0.030;
+  const lpf = AC.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 520;
+  const o1 = AC.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 110;
+  const o2 = AC.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 165; o2.detune.value = 7;
+  const o3 = AC.createOscillator(); o3.type = 'sine';     o3.frequency.value = 55;
+  o1.connect(lpf); o2.connect(lpf); o3.connect(padGain);
+  lpf.connect(padGain); padGain.connect(master);
+  o1.start(); o2.start(); o3.start();
+}
+function toggleMute(){
+  audioMuted = !audioMuted;
+  if (ac() && master) master.gain.value = audioMuted ? 0 : 1;
+  showHint(audioMuted ? 'Sound off' : 'Sound on', 1000);
+}
 function sfx(freq, dur, type){
   try {
-    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-    const o = AC.createOscillator(), g = AC.createGain();
+    const ctx = ac(); if (!ctx) return;
+    const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = type || 'sine';
     o.frequency.value = freq;
-    g.gain.setValueAtTime(0.15, AC.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
-    o.connect(g).connect(AC.destination);
-    o.start(); o.stop(AC.currentTime + dur);
+    g.gain.setValueAtTime(0.15, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.connect(g); g.connect(master);
+    o.start(); o.stop(ctx.currentTime + dur);
   } catch(e){}
+}
+function birdChirp(){
+  const ctx = ac(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'sine';
+  const hi = 2000 + Math.random()*800;
+  o.frequency.setValueAtTime(hi, t0);
+  o.frequency.exponentialRampToValueAtTime(hi*0.68, t0 + 0.09);
+  o.frequency.setValueAtTime(hi*1.1, t0 + 0.11);
+  o.frequency.exponentialRampToValueAtTime(hi*0.75, t0 + 0.2);
+  g.gain.setValueAtTime(0.0, t0);
+  g.gain.linearRampToValueAtTime(0.05, t0 + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.24);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 0.26);
+}
+function cricketBurst(){
+  const ctx = ac(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  for (let i=0;i<3;i++){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'square'; o.frequency.value = 4300;
+    const s = t0 + i*0.075;
+    g.gain.setValueAtTime(0.0, s);
+    g.gain.linearRampToValueAtTime(0.018, s + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.001, s + 0.05);
+    o.connect(g); g.connect(master); o.start(s); o.stop(s + 0.06);
+  }
+}
+const PENTA = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25];
+function pluckNote(){
+  const ctx = ac(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  const f = PENTA[(Math.random()*PENTA.length)|0] * (Math.random() < 0.22 ? 2 : 1);
+  const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0, t0);
+  g.gain.linearRampToValueAtTime(0.055, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + 2.1);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 2.2);
+}
+let lastBobSign = 1;
+function footstep(){
+  const ctx = ac(); if (!ctx || audioMuted) return;
+  const t0 = ctx.currentTime;
+  const src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx, 0.09);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 650 + Math.random()*350; bp.Q.value = 0.9;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.09, t0);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
+  src.connect(bp); bp.connect(g); g.connect(master); src.start(t0);
 }
 
 // ------------------- HUD & minimap -------------------
 const energyBar = document.getElementById('energyBar');
+const clockEl = document.getElementById('clock');
+let clockT = 0;
 const scoreEl = document.getElementById('score');
 const gemsEl = document.getElementById('gems');
 function updateHUD(){
@@ -918,6 +1263,17 @@ function updateHUD(){
   gemsEl.textContent = 'Gems: ' + gems.filter(g=>g.taken).length + ' / 10';
 }
 updateHUD();
+
+const scorePop = document.getElementById('scorePop');
+function popScore(text){
+  const el = document.createElement('span');
+  el.className = 'pop';
+  el.textContent = text;
+  scorePop.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+let bestScore = 0;
+try { bestScore = parseInt(localStorage.getItem('a3d_best') || '0', 10) || 0; } catch(e){}
 
 const mm = document.getElementById('minimap').getContext('2d');
 function drawMinimap(){
@@ -1023,6 +1379,7 @@ let elapsed = 0;
 let bobT = 0;
 
 function update(dt){
+  updateSky(dt);
   // movement
   const fwd = (keys.KeyW?1:0) - (keys.KeyS?1:0);
   const strafe = (keys.KeyD?1:0) - (keys.KeyA?1:0);
@@ -1077,11 +1434,86 @@ function update(dt){
   }
   player.pos.y = y;
 
-  // wading slows you
-  const wading = inWater();
-  if (wading) player.energy = Math.max(0, player.energy - dt*0.8);
 
   const t = elapsed += dt;
+  clockT -= dt;
+  if (clockT <= 0){
+    clockT = 0.5;
+    const mins = Math.floor(timeOfDay * 24 * 60);
+    const hh = String(Math.floor(mins / 60)).padStart(2, '0');
+    const mm2 = String(mins % 60).padStart(2, '0');
+    clockEl.textContent = (skyUniforms.nightFactor.value > 0.5 ? 'NIGHT ' : 'DAY ') + dayCount + ' · ' + hh + ':' + mm2;
+  }
+  const windGust = Math.max(0.25, 0.7 + 0.5*Math.sin(t*0.17) + 0.3*Math.sin(t*0.071 + 1.7));
+  for (const sw of swayers) sw.m.rotation.z = sw.base + Math.sin(t*1.35 + sw.ph)*0.05*windGust;
+  const nf = skyUniforms.nightFactor.value;
+  for (const c of clouds){
+    c.material.opacity = 0.85 - nf*0.45 - (raining ? 0.35 : 0);
+    c.material.color.copy(CLOUD_DAY).lerp(CLOUD_NIGHT, Math.min(1, nf + (raining ? 0.55 : 0)));
+  }
+  // weather state machine: scheduled showers roll in off the river
+  if (!raining){
+    nextRain -= dt;
+    if (nextRain <= 0){
+      raining = true;
+      rainT = 16 + Math.random()*14;
+      showHint('Rain rolls in off the river...', 2600);
+    }
+  } else {
+    rainT -= dt;
+    if (rainT <= 0){
+      raining = false;
+      nextRain = 75 + Math.random()*80;
+      showHint('The shower passes.', 2000);
+    }
+  }
+  rainLevel += ((raining ? 1 : 0) - rainLevel) * Math.min(1, dt*0.8);
+  weatherDim = 1 - rainLevel*0.5;
+  rainMat.opacity = rainLevel*0.85;
+  rainChip.style.display = rainLevel > 0.35 ? 'block' : 'none';
+  if (rainLevel > 0.02){
+    rain.visible = true;
+    const rp = rainGeo.attributes.position;
+    const cx = camera.position.x, cy = camera.position.y, cz = camera.position.z;
+    for (let i=0;i<rp.count;i++){
+      let y = rp.getY(i) - 34*dt*(0.8 + rainLevel*0.5);
+      if (y < cy - 26){
+        y = cy + 24 + Math.random()*6;
+        rp.setX(i, cx + (Math.random()-0.5)*120);
+        rp.setZ(i, cz + (Math.random()-0.5)*120);
+      } else rp.setY(i, y);
+    }
+    rp.needsUpdate = true;
+  } else rain.visible = false;
+
+  // firelight flickers; the jungle answers back
+  for (const f of fires){
+    const fl = 0.72 + 0.24*Math.sin(t*11 + f.ph) + 0.16*Math.sin(t*23 + f.ph*1.7);
+    f.light.intensity = (0.55 + 0.85*skyUniforms.nightFactor.value) * fl * (1 - rainLevel*0.35);
+    f.f1.scale.set(1, 0.82 + 0.38*fl, 1);
+    f.f2.scale.set(1, 0.78 + 0.42*fl, 1);
+    f.f1.rotation.y = t*2.1 + f.ph;
+    f.f2.rotation.y = -t*2.7 + f.ph;
+  }
+  if (rainGain) rainGain.gain.value = rainLevel*0.22;
+  if (windGain) windGain.gain.value = 0.035 + 0.035*windGust;
+
+  // the soundscape breathes with the hour and the weather
+  audioT -= dt;
+  if (audioT <= 0){
+    if (skyUniforms.nightFactor.value > 0.55){ cricketBurst(); audioT = 0.9 + Math.random()*1.7; }
+    else { birdChirp(); audioT = 3 + Math.random()*5; }
+  }
+  pluckT -= dt;
+  if (pluckT <= 0){ pluckNote(); pluckT = 7 + Math.random()*6; }
+  if (fwd || strafe){
+    const bs = Math.sign(Math.sin(bobT)) || 1;
+    if (bs !== lastBobSign && player.onGround){ footstep(); lastBobSign = bs; }
+  }
+
+  // wading slows you, and rain makes the river hungrier
+  const wading = inWater();
+  if (wading) player.energy = Math.max(0, player.energy - dt*(0.8 + rainLevel*1.1));
   const bob = player.onGround && (fwd||strafe) ? Math.sin(bobT)*0.06 : 0;
   camera.position.set(player.pos.x, y + EYE + bob, player.pos.z);
   camera.rotation.set(player.pitch, player.yaw, 0);
@@ -1150,6 +1582,9 @@ function update(dt){
   else if (player.hasIdol && !player.idolScored && Math.hypot(player.pos.x-6, player.pos.z-187) < 8){
     player.idolScored = true;
     player.score += 40;
+    popScore('+40');
+    bestScore = Math.max(bestScore, player.score);
+    try { localStorage.setItem('a3d_best', String(bestScore)); } catch(e){}
     sfx(660,0.2); setTimeout(()=>sfx(880,0.2),150); setTimeout(()=>sfx(1100,0.3),300);
     paused = true;
     for (const key of Object.keys(keys)) keys[key] = false;
@@ -1157,7 +1592,8 @@ function update(dt){
     document.getElementById('winText').innerHTML =
       'You returned the Golden Idol to the expedition boat!<br>' +
       'Final score: <b>' + player.score + '</b> &mdash; gems collected: ' +
-      gems.filter(g=>g.taken).length + '/10';
+      gems.filter(g=>g.taken).length + '/10' +
+      '<br>Best expedition: <b>' + bestScore + '</b>';
     winOverlay.style.display = 'flex';
     }
   else hint.style.display = 'none';
@@ -1182,7 +1618,6 @@ function update(dt){
   }
   updateTeam(dt, t);
 
-  water.material.opacity = 0.68 + Math.sin(t*1.5)*0.06;
   water.position.y = WATER_Y + Math.sin(t*0.8)*0.06;
 
   updateHUD();
@@ -1210,6 +1645,7 @@ window.__game = {player, gems, idol, terrainH, tryPickup, team, state: () => ({
   score: player.score, hasIdol: player.hasIdol, idolScored: player.idolScored,
   gemsTaken: gems.filter(g=>g.taken).length, paused,
   comrades: team.map(m => ({name:m.name, state:m.state})),
+  clock: {timeOfDay: +timeOfDay.toFixed(3), dayCount, raining},
   winVisible: winOverlay.style.display === 'flex',
   pos: {x: player.pos.x.toFixed(1), y: player.pos.y.toFixed(1), z: player.pos.z.toFixed(1)}
 })};
