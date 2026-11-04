@@ -1,0 +1,52 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build single-file dist
+        run: bash build.sh
+
+      - name: Verify build artifact
+        run: |
+          test -s dist/amazon-expedition-3d.html
+          echo "dist size: $(wc -c < dist/amazon-expedition-3d.html) bytes"
+
+      - name: Stage site (root dossier + game + dist)
+        run: |
+          mkdir _site
+          cp index.html showcase.html amazon_3d.html three.min.js LICENSE README.md _site/
+          mkdir _site/dist
+          cp dist/amazon-expedition-3d.html _site/dist/
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
