@@ -176,9 +176,10 @@
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate = false;   // sun moves slowly — refresh on a cadence, not every frame
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.12;
@@ -1516,6 +1517,7 @@ function groundAt(x, z, feetY){
 
 let elapsed = 0;
 let bobT = 0;
+let hudT = 0, mmT = 0;
 
 function update(dt){
   updateSky(dt);
@@ -1759,8 +1761,10 @@ function update(dt){
 
   water.position.y = WATER_Y + Math.sin(t*0.8)*0.06;
 
-  updateHUD();
-  drawMinimap();
+  hudT -= dt;
+  if (hudT <= 0){ hudT = 0.12; updateHUD(); }
+  mmT -= dt;
+  if (mmT <= 0){ mmT = 0.15; drawMinimap(); }
 }
 
 function inWater(){
@@ -1769,10 +1773,27 @@ function inWater(){
 
 // ------------------- main loop -------------------
 let last = performance.now();
+let emaDt = 1/60, frameN = 0, qualityLevel = 0;
+const PR_LEVELS = [Math.min(devicePixelRatio, 1.5), 1.25, 1.0];
 function loop(now){
   requestAnimationFrame(loop);
   const dt = Math.min((now - last)/1000, 0.05);
   last = now;
+  emaDt = emaDt*0.95 + dt*0.05;
+  frameN++;
+  // reassess quality ~every 0.75s: degrade under load, recover when smooth
+  if (frameN % 45 === 0){
+    if (emaDt > 0.028 && qualityLevel < PR_LEVELS.length - 1){
+      qualityLevel++;
+      renderer.setPixelRatio(PR_LEVELS[qualityLevel]);
+      renderer.setSize(innerWidth, innerHeight);
+    } else if (emaDt < 0.015 && qualityLevel > 0){
+      qualityLevel--;
+      renderer.setPixelRatio(PR_LEVELS[qualityLevel]);
+      renderer.setSize(innerWidth, innerHeight);
+    }
+  }
+  renderer.shadowMap.needsUpdate = (frameN % 2 === 0);
   if (!paused) update(dt);
   renderer.render(scene, camera);
 }
