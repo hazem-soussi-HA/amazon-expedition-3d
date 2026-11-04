@@ -6,53 +6,101 @@
 <meta charset="UTF-8">
 <title>Amazon Expedition 3D — &copy; Hazem Soussi</title>
 <style>
-  html,body{margin:0;padding:0;overflow:hidden;background:#000;font-family:'Segoe UI',Arial,sans-serif;height:100%}
+  :root{
+    --gold:#ffd54a; --gold-dim:rgba(255,213,74,.38);
+    --mint:#7dffa0; --mint-dim:rgba(125,255,160,.30);
+    --panel:linear-gradient(165deg, rgba(12,18,15,.90), rgba(8,12,10,.66));
+    --text-dim:rgba(234,255,240,.55);
+    --chamfer:polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  }
+  html,body{margin:0;padding:0;overflow:hidden;background:#020604;font-family:'Segoe UI',Arial,Helvetica,sans-serif;height:100%}
   #c{display:block}
-  .hud{position:fixed;color:#fff;text-shadow:0 1px 3px #000;user-select:none;z-index:5}
-  #score{top:14px;left:16px;font-size:22px;font-weight:bold}
-  #gems{top:44px;left:16px;font-size:16px}
-  #energyWrap{top:14px;right:200px;width:150px;height:14px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.5);border-radius:7px;overflow:hidden}
-  #energyBar{height:100%;width:100%;background:linear-gradient(90deg,#e74c3c,#f1c40f,#2ecc71);transition:width .2s}
-  #energyLabel{top:32px;right:200px;font-size:11px;opacity:.85}
-  #hint{bottom:70px;left:50%;transform:translateX(-50%);font-size:17px;background:rgba(0,0,0,.5);padding:8px 18px;border-radius:20px;display:none}
-  #crosshair{top:50%;left:50%;transform:translate(-50%,-50%);font-size:20px;opacity:.8}
-  #minimap{position:fixed;top:14px;right:14px;border:2px solid rgba(255,255,255,.6);border-radius:8px;z-index:5}
-  #logo{position:fixed;bottom:14px;left:16px;z-index:5;display:flex;align-items:center;gap:10px;color:#fff;text-shadow:0 1px 3px #000;user-select:none;opacity:.9}
-  #logo svg{filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
-  #logo .t{font-size:15px;font-weight:bold;letter-spacing:1px}
-  #logo .c{font-size:11px;opacity:.8}
-  .overlay{position:fixed;inset:0;background:rgba(6,25,12,.88);color:#d8f3d8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;text-align:center}
-  .overlay h1{font-size:46px;margin:0 0 8px;color:#7dffa0;text-shadow:0 0 18px #0a4}
-  .overlay p{max-width:560px;line-height:1.5;font-size:16px;margin:6px 0}
-  .overlay .btn{margin-top:22px;padding:13px 42px;font-size:20px;background:#2ecc71;border:none;border-radius:30px;color:#08290f;font-weight:bold;cursor:pointer}
-  .overlay .btn:hover{background:#58e58b}
-  #winOverlay{display:none;background:rgba(30,20,0,.85)}
+  .hud{position:fixed;color:#eafff0;user-select:none;z-index:5}
+  .hud-panel{
+    background:var(--panel);
+    border:1px solid rgba(255,255,255,.12);
+    clip-path:var(--chamfer);
+    padding:10px 16px;
+    box-shadow:0 4px 18px rgba(0,0,0,.45);
+    position:relative;
+  }
+  .hud-panel::before{content:'';position:absolute;top:0;left:14px;width:52px;height:2px;
+    background:linear-gradient(90deg, var(--gold), transparent)}
+  #hudLeft{top:16px;left:18px;min-width:150px}
+  #score{position:static;font-family:'Courier New',monospace;font-size:24px;font-weight:700;
+    letter-spacing:.06em;color:#fff;text-shadow:0 0 14px rgba(255,213,74,.35)}
+  #gems{position:static;margin-top:2px;font-family:'Courier New',monospace;font-size:13px;
+    letter-spacing:.18em;color:var(--gold)}
+  #energyWrap{top:16px;right:210px;width:170px;height:16px;background:rgba(0,0,0,.55);
+    border:1px solid rgba(255,255,255,.16);clip-path:polygon(10px 0,100% 0,100% 100%,0 100%,0 10px);overflow:hidden;padding:0}
+  #energyBar{height:100%;width:100%;background:linear-gradient(90deg,#ff5b4d,#ffc24b 55%,#2ecc71);
+    box-shadow:0 0 12px rgba(46,204,113,.4);transition:width .18s}
+  #energyLabel{top:36px;right:210px;font-family:'Courier New',monospace;font-size:10px;
+    letter-spacing:.32em;color:var(--text-dim)}
+  #hint{bottom:74px;left:50%;transform:translateX(-50%);font-size:14px;letter-spacing:.04em;
+    background:var(--panel);border:1px solid var(--gold-dim);color:#ffe9a8;padding:8px 22px;
+    clip-path:var(--chamfer);display:none;white-space:nowrap}
+  #crosshair{top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px;font-weight:300;
+    color:var(--gold);opacity:.9;text-shadow:0 0 10px rgba(255,213,74,.55)}
+  #minimap{position:fixed;top:16px;right:16px;border:1px solid rgba(255,255,255,.16);
+    clip-path:var(--chamfer);z-index:5;background:rgba(4,10,7,.55)}
+  #logo{position:fixed;bottom:16px;left:18px;z-index:5;display:flex;align-items:center;gap:12px;
+    color:#eafff0;user-select:none;opacity:.95;border-left:2px solid var(--gold);padding-left:12px}
+  #logo svg{filter:drop-shadow(0 2px 4px rgba(0,0,0,.65))}
+  #logo .t{font-size:14px;font-weight:800;letter-spacing:.22em}
+  #logo .c{font-size:10px;letter-spacing:.18em;color:var(--text-dim)}
+  .overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:10;text-align:center;color:#eafff0;
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.022) 0 2px, transparent 2px 16px),
+      radial-gradient(1100px 700px at 50% -10%, rgba(46,204,113,.16), transparent 60%),
+      rgba(3,14,8,.90)}
+  .overlay h1{position:relative;font-size:44px;margin:0 0 6px;font-weight:800;letter-spacing:.08em;
+    color:#eafff0;text-shadow:0 0 22px rgba(46,204,113,.5);padding-bottom:16px}
+  .overlay h1::after{content:'';position:absolute;left:50%;transform:translateX(-50%) skewX(-18deg);
+    bottom:0;width:150px;height:4px;background:linear-gradient(90deg, transparent, var(--gold), transparent)}
+  .overlay p{max-width:560px;line-height:1.55;font-size:16px;margin:8px 0;color:rgba(234,255,240,.82)}
+  .overlay .btn{margin-top:24px;padding:15px 46px;font-size:17px;font-weight:800;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);
+    cursor:pointer;clip-path:polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+    transition:all .18s;text-shadow:0 0 12px rgba(255,213,74,.35)}
+  .overlay .btn:hover{background:var(--gold);color:#191002;box-shadow:0 0 34px rgba(255,213,74,.4);text-shadow:none}
+  #winOverlay{display:none;background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.02) 0 2px, transparent 2px 16px),
+      radial-gradient(900px 600px at 50% 0%, rgba(255,213,74,.14), transparent 60%),
+      rgba(24,17,2,.92)}
+  #winOverlay h1{color:#ffe9a8;text-shadow:0 0 24px rgba(255,213,74,.55)}
   #pauseOverlay{display:none}
-  .keys{margin-top:14px;font-size:14px;opacity:.85;line-height:1.7}
-  kbd{background:#123d1f;padding:2px 8px;border-radius:5px;border:1px solid #3a7}
+  .keys{margin-top:18px;font-size:13px;color:var(--text-dim);line-height:2}
+  kbd{background:#0d1f14;padding:2px 9px;margin:0 2px;border:1px solid rgba(125,255,160,.3);
+    border-bottom-width:2px;color:var(--mint);font-family:'Courier New',monospace;font-size:12px}
+  .tuned{margin-top:14px;font-family:'Courier New',monospace;font-size:10px;letter-spacing:.22em;color:rgba(234,255,240,.38)}
   #vignette{position:fixed;inset:0;z-index:4;pointer-events:none;
-    background:radial-gradient(ellipse at center, transparent 52%, rgba(2,10,6,.42) 100%)}
-  #clock{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:6;
-    font-family:'Courier New',monospace;font-size:13px;letter-spacing:.12em;color:#eafff0;
-    background:rgba(6,20,12,.55);border:1px solid rgba(125,255,160,.28);
-    padding:5px 14px;border-radius:14px;text-shadow:0 1px 2px #000;user-select:none}
-  #rainChip{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:6;display:none;
-    font-family:'Courier New',monospace;font-size:11px;letter-spacing:.28em;color:#bfe6ff;
-    background:rgba(20,40,60,.6);border:1px solid rgba(160,210,255,.4);
-    padding:4px 14px;border-radius:12px;animation:rainPulse 1.4s infinite}
+    background:radial-gradient(ellipse at center, transparent 50%, rgba(1,8,5,.5) 100%)}
+  #clock,#rainChip,#freqChip{position:fixed;left:50%;transform:translateX(-50%);z-index:6;
+    font-family:'Courier New',monospace;letter-spacing:.18em;user-select:none;white-space:nowrap;
+    clip-path:polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%)}
+  #clock{top:16px;font-size:12px;color:#eafff0;background:rgba(6,20,12,.72);
+    border:1px solid var(--mint-dim);padding:6px 20px;text-shadow:0 1px 2px #000}
+  #rainChip{top:52px;display:none;font-size:10px;color:#bfe6ff;background:rgba(16,34,52,.78);
+    border:1px solid rgba(160,210,255,.4);padding:4px 18px;animation:rainPulse 1.4s infinite}
+  #freqChip{top:84px;display:none;font-size:10px;color:#ffc7ec;background:rgba(46,16,40,.78);
+    border:1px solid rgba(255,170,225,.4);padding:4px 18px}
   @keyframes rainPulse{50%{opacity:.55}}
-  #scorePop{position:fixed;left:50%;top:38%;transform:translateX(-50%);z-index:7;pointer-events:none}
+  #scorePop{position:fixed;left:50%;top:36%;transform:translateX(-50%);z-index:7;pointer-events:none}
   .pop{position:absolute;left:0;top:0;transform:translate(-50%,0);white-space:nowrap;
-    font:bold 22px 'Segoe UI',sans-serif;color:#ffd54a;text-shadow:0 0 12px rgba(255,180,40,.65),0 2px 3px #000;
-    animation:popRise 1.25s ease-out forwards}
-  @keyframes popRise{0%{opacity:0;margin-top:14px}15%{opacity:1}100%{opacity:0;margin-top:-46px}}
+    font:800 24px 'Segoe UI',sans-serif;letter-spacing:.1em;color:var(--gold);
+    text-shadow:0 0 14px rgba(255,180,40,.65),0 2px 3px #000;animation:popRise 1.25s ease-out forwards}
+  @keyframes popRise{0%{opacity:0;margin-top:14px}15%{opacity:1}100%{opacity:0;margin-top:-48px}}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 
-<div class="hud" id="score">Score: 0</div>
-<div class="hud" id="gems">Gems: 0 / 10</div>
+<div class="hud hud-panel" id="hudLeft">
+  <div id="score">0</div>
+  <div id="gems">GEMS 0 / 10</div>
+</div>
 <div class="hud" id="energyWrap"><div id="energyBar"></div></div>
 <div class="hud" id="energyLabel">ENERGY</div>
 <div class="hud" id="crosshair">+</div>
@@ -79,6 +127,7 @@
 <div id="vignette"></div>
 <div id="clock">DAY 1 &middot; 08:02</div>
 <div id="rainChip">&#9748; RAIN</div>
+<div id="freqChip">&#9835; 528 Hz RESONANCE</div>
 <div id="scorePop"></div>
 
 <div class="overlay" id="startOverlay">
@@ -91,7 +140,8 @@
   <div class="keys">
     <kbd>W A S D</kbd> move &nbsp; <kbd>Mouse</kbd> look &nbsp; <kbd>Shift</kbd> sprint &nbsp;
     <kbd>Space</kbd> jump &nbsp; <kbd>E</kbd> pick up &nbsp; <kbd>Esc</kbd> pause<br>
-    <kbd>T</kbd> time-lapse &nbsp; <kbd>M</kbd> sound on/off
+    <kbd>T</kbd> time-lapse &nbsp; <kbd>M</kbd> sound &nbsp; <kbd>F</kbd> resonance 528 Hz<br>
+    <span class="tuned">A4 = 432 Hz &nbsp;·&nbsp; HAZOOM RESONANCE TUNING</span>
   </div>
 </div>
 
@@ -787,15 +837,22 @@ for (let i=0;i<6;i++){
 // see you. Built from primitives on purpose - no rigs, no assets, one file.
 const TEAM_NAMES = ['MARCO', 'ELENA', 'KAI'];
 const teamMats = {
-  shirt: [0xc96f4a, 0x4a7ec9, 0x6aa84f].map(c => new THREE.MeshLambertMaterial({color:c})),
-  pants: new THREE.MeshLambertMaterial({color:0x5a4a33}),
-  skin : [0xe0ac69, 0xc68642, 0x8d5524].map(c => new THREE.MeshLambertMaterial({color:c})),
+  shirt: [0x8a7a52, 0x6f7a4e, 0x7c6a58].map(c => new THREE.MeshLambertMaterial({color:c})),  // khaki, olive drab, taupe
+  pants: new THREE.MeshLambertMaterial({color:0x4a4232}),
+  skin : [0xe0ac69, 0xc68642, 0x8d5524].map(c => new THREE.MeshPhongMaterial({color:c, shininess:6})),
   hat  : new THREE.MeshLambertMaterial({color:0xcbb98a}),
-  pack : new THREE.MeshLambertMaterial({color:0x7a5c3a}),
-  boot : new THREE.MeshLambertMaterial({color:0x3f3226})
+  pack : new THREE.MeshLambertMaterial({color:0x6b5233}),
+  boot : new THREE.MeshLambertMaterial({color:0x2e2822}),
+  sole : new THREE.MeshLambertMaterial({color:0x141210}),
+  strap: new THREE.MeshLambertMaterial({color:0x35301f}),
+  leather: new THREE.MeshLambertMaterial({color:0x6b4f2e}),
+  shades: new THREE.MeshLambertMaterial({color:0x14161a}),
+  glove: new THREE.MeshLambertMaterial({color:0x35322c}),
+  packDark: new THREE.MeshLambertMaterial({color:0x51402c}),
+  canteen: new THREE.MeshLambertMaterial({color:0x5f6e5a}),
+  steel: new THREE.MeshPhongMaterial({color:0xa8a698, shininess:70})
 };
 const unitBox = new THREE.BoxGeometry(1,1,1);
-const handGeo = new THREE.SphereGeometry(0.085, 6, 5);
 
 function boxMesh(w,h,d,mat){
   const m = new THREE.Mesh(unitBox, mat);
@@ -816,31 +873,69 @@ function makeExplorer(i){
   const shirt = teamMats.shirt[i], skin = teamMats.skin[i];
   const g = new THREE.Group();
 
-  const torso = boxMesh(0.5,0.62,0.3, shirt); torso.position.y = 1.12;
-  const belt  = boxMesh(0.44,0.12,0.28, teamMats.pants); belt.position.y = 0.78;
-  const head  = new THREE.Mesh(new THREE.SphereGeometry(0.17,10,8), skin);
-  head.position.y = 1.6; head.castShadow = true;
-  const brim  = new THREE.Mesh(new THREE.CylinderGeometry(0.29,0.31,0.04,12), teamMats.hat);
-  brim.position.y = 1.72; brim.castShadow = true;
-  const dome  = new THREE.Mesh(new THREE.SphereGeometry(0.155,10,6,0,6.3,0,Math.PI/2), teamMats.hat);
-  dome.position.y = 1.75;
-  const pack  = boxMesh(0.36,0.44,0.22, teamMats.pack); pack.position.set(0,1.12,-0.26);
-  const roll  = boxMesh(0.3,0.16,0.2, teamMats.hat); roll.position.set(0,0.9,-0.34);
+  // pelvis → torso, tapered like a real torso, not a filing cabinet
+  const hips  = boxMesh(0.34, 0.17, 0.22, teamMats.pants); hips.position.y = 0.955;
+  const torso = boxMesh(0.44, 0.46, 0.27, shirt);          torso.position.y = 1.25;
+  const chest = boxMesh(0.49, 0.17, 0.30, shirt);          chest.position.y = 1.505; // trapezius shelf
+  const belt  = boxMesh(0.36, 0.085, 0.235, teamMats.strap); belt.position.y = 1.015;
+  const buckle = boxMesh(0.09, 0.055, 0.02, teamMats.steel); buckle.position.set(0, 1.015, 0.125);
 
-  const armL = limb(0.15,0.52,0.15, shirt); armL.position.set(-0.32,1.36,0);
-  const armR = armL.clone(); armR.position.x = 0.32;
-  const handL = new THREE.Mesh(handGeo, skin); handL.position.y = -0.62; armL.add(handL);
-  const handR = new THREE.Mesh(handGeo, skin); handR.position.y = -0.62; armR.add(handR);
+  // field-shirt details: chest pockets and a crossed harness
+  const pocketL = boxMesh(0.085, 0.095, 0.018, teamMats.packDark); pocketL.position.set(-0.115, 1.34, 0.145);
+  const pocketR = pocketL.clone();                                pocketR.position.x = 0.115;
+  const strapL  = boxMesh(0.065, 0.60, 0.018, teamMats.strap);     strapL.position.set(-0.105, 1.32, 0.145); strapL.rotation.z =  0.42;
+  const strapR  = boxMesh(0.065, 0.60, 0.018, teamMats.strap);     strapR.position.set( 0.105, 1.32, 0.145); strapR.rotation.z = -0.42;
 
-  const legL = limb(0.17,0.44,0.17, teamMats.pants); legL.position.set(-0.13,0.74,0);
-  const legR = legL.clone(); legR.position.x = 0.13;
-  const shinL = limb(0.14,0.42,0.14, teamMats.pants); shinL.position.y = -0.44; legL.add(shinL);
-  const shinR = limb(0.14,0.42,0.14, teamMats.pants); shinR.position.y = -0.44; legR.add(shinR);
-  const bootL = boxMesh(0.16,0.12,0.26, teamMats.boot); bootL.position.set(0,-0.84,0.05); legL.add(bootL);
-  const bootR = boxMesh(0.16,0.12,0.26, teamMats.boot); bootR.position.set(0,-0.84,0.05); legR.add(bootR);
+  // neck and a longer, humanoid head with shades
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.09, 8), skin);
+  neck.position.y = 1.63; neck.castShadow = true;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.155, 12, 10), skin);
+  head.scale.set(1, 1.18, 1.02);
+  head.position.y = 1.755; head.castShadow = true;
+  const shades = boxMesh(0.19, 0.042, 0.02, teamMats.shades);
+  shades.position.set(0, 1.785, 0.135);
 
-  g.add(torso, belt, head, brim, dome, pack, roll, armL, armR, legL, legR);
-  g.scale.setScalar(1.02);
+  // expedition hat: wide brim + dome
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.285, 0.035, 14), teamMats.hat);
+  brim.position.y = 1.878; brim.castShadow = true;
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.148, 12, 8, 0, Math.PI*2, 0, Math.PI/2), teamMats.hat);
+  dome.position.y = 1.888;
+
+  // pack, bedroll and a canteen on the hip — the full field kit
+  const pack = boxMesh(0.36, 0.44, 0.20, teamMats.pack);     pack.position.set(0, 1.30, -0.245);
+  const flap = boxMesh(0.30, 0.09, 0.02, teamMats.packDark); flap.position.set(0, 1.475, -0.35);
+  const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.40, 8), teamMats.hat);
+  roll.rotation.z = Math.PI/2; roll.position.set(0, 1.555, -0.245); roll.castShadow = true;
+  const canteen = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.16, 8), teamMats.canteen);
+  canteen.position.set(0.21, 1.12, -0.13); canteen.castShadow = true;
+
+  // arms: shoulder → elbow → bracer → fingerless glove
+  const armL = limb(0.125, 0.56, 0.125, shirt); armL.position.set(-0.30, 1.49, 0);
+  const armR = limb(0.125, 0.56, 0.125, shirt); armR.position.set( 0.30, 1.49, 0);
+  for (const [arm, side] of [[armL, -1], [armR, 1]]){
+    const bracer = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.078, 0.13, 8), teamMats.leather);
+    bracer.position.y = -0.36;
+    arm.add(bracer);
+    const glove = new THREE.Mesh(new THREE.SphereGeometry(0.078, 8, 6), teamMats.glove);
+    glove.scale.set(1, 0.9, 1.15);
+    glove.position.y = -0.60;
+    arm.add(glove);
+  }
+
+  // legs: thigh → shin → boot with a sole
+  const legL = limb(0.155, 0.42, 0.155, teamMats.pants); legL.position.set(-0.125, 0.88, 0);
+  const legR = limb(0.155, 0.42, 0.155, teamMats.pants); legR.position.set( 0.125, 0.88, 0);
+  const shinL = limb(0.125, 0.42, 0.125, teamMats.pants); shinL.position.y = -0.42; legL.add(shinL);
+  const shinR = limb(0.125, 0.42, 0.125, teamMats.pants); shinR.position.y = -0.42; legR.add(shinR);
+  for (const shin of [shinL, shinR]){
+    const boot = boxMesh(0.155, 0.125, 0.27, teamMats.boot); boot.position.set(0, -0.415, 0.05); shin.add(boot);
+    const sole = boxMesh(0.165, 0.032, 0.28, teamMats.sole); sole.position.set(0, -0.485, 0.05); shin.add(sole);
+  }
+
+  g.add(hips, torso, chest, belt, buckle, pocketL, pocketR, strapL, strapR,
+        neck, head, shades, brim, dome, pack, flap, roll, canteen,
+        armL, armR, legL, legR);
+  g.scale.setScalar(1.04);
   return {g, parts:{armL, armR, legL, legR, shinL, shinR, torso, head}};
 }
 
@@ -954,20 +1049,22 @@ function updateTeam(dt, t){
 
     // ---- procedural walk / idle animation ----
     if (moving) m.phase += dt*(3.2 + speed*0.6);
-    const s = moving ? 1 : 0.12;
-    const sw = Math.sin(m.phase)*0.62*s, sw2 = Math.sin(m.phase+Math.PI)*0.62*s;
+    const amp = moving ? 1 : 0.12;
+    const sw = Math.sin(m.phase)*0.78*amp, sw2 = Math.sin(m.phase+Math.PI)*0.78*amp;
     p.legL.rotation.x = sw;  p.legR.rotation.x = sw2;
-    p.shinL.rotation.x = Math.max(0, -sw*1.1);
-    p.shinR.rotation.x = Math.max(0, -sw2*1.1);
-    p.armL.rotation.x = sw2*0.75; p.armR.rotation.x = sw*0.75;
-    p.torso.rotation.x = -0.04 + Math.abs(Math.sin(m.phase))*0.03*s;
-    p.torso.rotation.z = Math.sin(m.phase)*0.03*s;
+    p.shinL.rotation.x = Math.max(0.10, -sw*1.45);   // knees never fully lock
+    p.shinR.rotation.x = Math.max(0.10, -sw2*1.45);
+    p.armL.rotation.x = sw2*0.65 - 0.15;             // slight forward carriage
+    p.armR.rotation.x = sw*0.65 - 0.15;
+    p.torso.rotation.x = (moving ? 0.10 : -0.02) + Math.abs(Math.sin(m.phase))*0.03*amp;
+    p.torso.rotation.z = Math.sin(m.phase)*0.04*amp;
+    p.head.position.y = 1.755 + Math.abs(Math.sin(m.phase))*0.024*amp;
 
     if (m.state === 'admire'){
       p.armR.rotation.x = -1.3;                      // hand shading the eyes
       p.armR.rotation.z = -0.15;
       p.torso.rotation.x = -0.12;                    // leaning back to take in the canopy
-      p.head.position.y = 1.6 + Math.sin(t*1.2+m.admire)*0.012;
+      p.head.position.y = 1.755 + Math.sin(t*1.2+m.admire)*0.012;
     }
     if (m.state === 'greet'){
       const wave = Math.sin(t*9)*0.45;
@@ -1006,6 +1103,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'KeyE') tryPickup();
   if (e.code === 'Space' && !e.repeat) jumpBuffer = 0.15;
   if (e.code === 'KeyM') toggleMute();
+  if (e.code === 'KeyF') toggleResonance();
   if (e.code === 'KeyT'){ timeOfDay = (timeOfDay + 1/24) % 1; showHint('Time-lapse: +1 hour', 900); }
 });
 document.addEventListener('keyup', e => keys[e.code] = false);
@@ -1059,7 +1157,9 @@ function showPause(on){
 // a machete in the right hand. Parented to the camera, so it is zero extra state.
 let punch = 0;                     // recoil when you pick something up
 const viewmodel = new THREE.Group();
-const skinMat  = new THREE.MeshLambertMaterial({color:0xc08a58});
+const skinMat  = new THREE.MeshPhongMaterial({color:0xc08a58, shininess:6});
+const leatherMat = new THREE.MeshLambertMaterial({color:0x6b4f2e});
+const gloveMat = new THREE.MeshLambertMaterial({color:0x35322c});
 const shirtMat = new THREE.MeshLambertMaterial({color:0xcdbb8f});
 const cuffMat  = new THREE.MeshLambertMaterial({color:0xa89a6d});
 const steelMat = new THREE.MeshPhongMaterial({color:0x9aa6ad, shininess:90});
@@ -1073,10 +1173,14 @@ function makeArm(side){
   cuff.position.y = -0.33;
   const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.062,0.055,0.3,7), skinMat);
   forearm.position.y = -0.51;
+  const bracer = new THREE.Mesh(new THREE.CylinderGeometry(0.070,0.066,0.10,8), leatherMat);
+  bracer.position.y = -0.46;
+  const wrist = new THREE.Mesh(new THREE.CylinderGeometry(0.068,0.068,0.045,8), gloveMat);
+  wrist.position.y = -0.60;
   const hand = new THREE.Mesh(new THREE.SphereGeometry(0.075,8,6), skinMat);
   hand.scale.set(1,0.85,1.2);
   hand.position.y = -0.66;
-  g.add(sleeve, cuff, forearm, hand);
+  g.add(sleeve, cuff, forearm, bracer, wrist, hand);
   g.position.set(side*0.27, -0.02, -0.72);
   g.rotation.set(0.45, side*0.06, side*0.1);
   viewmodel.add(g);
@@ -1146,7 +1250,7 @@ function tryPickup(){
 }
 
 // ------------------- audio: a procedural world, zero samples -------------------
-let AC = null, master = null, windGain = null, rainGain = null, audioMuted = false;
+let AC = null, master = null, windGain = null, rainGain = null, resonanceGain = null, audioMuted = false;
 let audioT = 2.5, pluckT = 4;
 
 function ac(){
@@ -1184,12 +1288,37 @@ function startWind(){
 
   const padGain = AC.createGain(); padGain.gain.value = 0.030;
   const lpf = AC.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 520;
-  const o1 = AC.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 110;
-  const o2 = AC.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 165; o2.detune.value = 7;
-  const o3 = AC.createOscillator(); o3.type = 'sine';     o3.frequency.value = 55;
+  const o1 = AC.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 107.91;
+  const o2 = AC.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 161.87; o2.detune.value = 7;
+  const o3 = AC.createOscillator(); o3.type = 'sine';     o3.frequency.value = 53.96;
   o1.connect(lpf); o2.connect(lpf); o3.connect(padGain);
   lpf.connect(padGain); padGain.connect(master);
   o1.start(); o2.start(); o3.start();
+
+  // HAZOOM resonance layer: 528 Hz + sub-harmonic breath, silent until toggled (F)
+  resonanceGain = AC.createGain();
+  resonanceGain.gain.value = 0;
+  const r1 = AC.createOscillator(); r1.type = 'sine'; r1.frequency.value = 528;
+  const r2 = AC.createOscillator(); r2.type = 'sine'; r2.frequency.value = 264;
+  const g1 = AC.createGain(); g1.gain.value = 1.0;
+  const g2 = AC.createGain(); g2.gain.value = 0.55;
+  const lfo = AC.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.14;   // slow breathing
+  const lfoGain = AC.createGain(); lfoGain.gain.value = 0.018;
+  lfo.connect(lfoGain); lfoGain.connect(resonanceGain.gain);
+  r1.connect(g1); g1.connect(resonanceGain);
+  r2.connect(g2); g2.connect(resonanceGain);
+  resonanceGain.connect(master);
+  r1.start(); r2.start(); lfo.start();
+}
+let resonanceOn = false;
+function toggleResonance(){
+  resonanceOn = !resonanceOn;
+  if (ac() && resonanceGain){
+    resonanceGain.gain.cancelScheduledValues(AC.currentTime);
+    resonanceGain.gain.setTargetAtTime(resonanceOn ? 0.035 : 0, AC.currentTime, 0.6);
+  }
+  document.getElementById('freqChip').style.display = resonanceOn ? 'block' : 'none';
+  showHint(resonanceOn ? 'Resonance 528 Hz — on' : 'Resonance — off', 1400);
 }
 function toggleMute(){
   audioMuted = !audioMuted;
@@ -1236,7 +1365,8 @@ function cricketBurst(){
     o.connect(g); g.connect(master); o.start(s); o.stop(s + 0.06);
   }
 }
-const PENTA = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25];
+// A4 = 432 Hz (HAZOOM resonance tuning) — full scale transposed by 432/440
+const PENTA = [256.87, 288.32, 323.64, 384.87, 432.0, 513.74];
 function pluckNote(){
   const ctx = ac(); if (!ctx) return;
   const t0 = ctx.currentTime;
@@ -1268,8 +1398,8 @@ const scoreEl = document.getElementById('score');
 const gemsEl = document.getElementById('gems');
 function updateHUD(){
   energyBar.style.width = player.energy + '%';
-  scoreEl.textContent = 'Score: ' + player.score;
-  gemsEl.textContent = 'Gems: ' + gems.filter(g=>g.taken).length + ' / 10';
+  scoreEl.textContent = String(player.score).padStart(6, '0');
+  gemsEl.textContent = 'GEMS ' + String(gems.filter(g=>g.taken).length).padStart(2, '0') + ' / 10';
 }
 updateHUD();
 
